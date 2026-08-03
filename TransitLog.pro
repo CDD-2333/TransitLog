@@ -24,6 +24,7 @@ SOURCES += \
     src/model/triplistmodel.cpp \
     src/repo/triprepository.cpp \
     src/repo/userrepository.cpp \
+    src/ui/appdatetimeedit.cpp \
     src/ui/chartwidget.cpp \
     src/ui/logindialog.cpp \
     src/ui/mainwindow.cpp \
@@ -43,6 +44,7 @@ HEADERS += \
     src/model/triplistmodel.h \
     src/repo/triprepository.h \
     src/repo/userrepository.h \
+    src/ui/appdatetimeedit.h \
     src/ui/chartwidget.h \
     src/ui/logindialog.h \
     src/ui/mainwindow.h \

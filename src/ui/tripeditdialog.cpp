@@ -11,6 +11,8 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include "ui/appdatetimeedit.h"
+
 namespace {
 
 QDoubleValidator* kmValidator(QObject* parent)
@@ -85,11 +87,11 @@ void TripEditDialog::buildUI()
     form->addRow(QStringLiteral("起点"), m_startPlace);
     form->addRow(QStringLiteral("终点"), m_endPlace);
 
-    // 时间
-    m_startTime = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    // 时间（AppDateTimeEdit 自带与 QComboBox 同款下拉箭头）
+    m_startTime = new AppDateTimeEdit(QDateTime::currentDateTime(), this);
     m_startTime->setCalendarPopup(true);
     m_startTime->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
-    m_endTime = new QDateTimeEdit(QDateTime::currentDateTime(), this);
+    m_endTime = new AppDateTimeEdit(QDateTime::currentDateTime(), this);
     m_endTime->setCalendarPopup(true);
     m_endTime->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
     m_inProgress = new QCheckBox(QStringLiteral("进行中（未到达）"), this);

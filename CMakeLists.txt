@@ -30,6 +30,8 @@ set(TRANSITLOG_SOURCES
     src/repo/triprepository.h
     src/repo/userrepository.cpp
     src/repo/userrepository.h
+    src/ui/appdatetimeedit.cpp
+    src/ui/appdatetimeedit.h
     src/ui/chartwidget.cpp
     src/ui/chartwidget.h
     src/ui/logindialog.cpp

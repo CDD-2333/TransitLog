@@ -7,9 +7,9 @@
 
 class QCheckBox;
 class QComboBox;
-class QDateTimeEdit;
 class QLabel;
 class QLineEdit;
+class AppDateTimeEdit;
 
 // 新增 / 编辑行程对话框。只负责收集输入并做基本校验，写库由外部 Repository 完成。
 class TripEditDialog : public QDialog {
@@ -36,8 +36,8 @@ private:
     QComboBox* m_modeCombo = nullptr;
     QLineEdit* m_startPlace = nullptr;
     QLineEdit* m_endPlace = nullptr;
-    QDateTimeEdit* m_startTime = nullptr;
-    QDateTimeEdit* m_endTime = nullptr;
+    AppDateTimeEdit* m_startTime = nullptr;
+    AppDateTimeEdit* m_endTime = nullptr;
     QCheckBox* m_inProgress = nullptr;
     QLineEdit* m_distance = nullptr;
     QLineEdit* m_cost = nullptr;

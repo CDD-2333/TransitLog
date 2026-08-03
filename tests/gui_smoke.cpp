@@ -2,6 +2,7 @@
 // 用法：QT_QPA_PLATFORM=offscreen ./TransitLogGuiSmoke
 #include <QApplication>
 #include <QComboBox>
+#include <QDateTimeEdit>
 #include <QDebug>
 #include <QDir>
 #include <QFontDatabase>
@@ -14,6 +15,7 @@
 #include "app/session.h"
 #include "app/thememanager.h"
 #include "repo/triprepository.h"
+#include "ui/appdatetimeedit.h"
 #include "ui/mainwindow.h"
 #include "ui/tripeditdialog.h"
 
@@ -106,6 +108,37 @@ int main(int argc, char* argv[])
     qInfo() << "combo arrow pixels light=" << lightPx << "dark=" << darkPx;
     if (lightPx < 10 || darkPx < 10) {
         qCritical() << "QComboBox 下拉箭头未渲染";
+        ++failures;
+    }
+
+    // QDateTimeEdit（时间选择器，calendarPopup）下拉三角：与 QComboBox 同款线条 chevron
+    auto dateTimeArrowPixels = [&](Theme t, const QColor& target) {
+        ThemeManager::instance().setTheme(t);
+        app.setStyleSheet(ThemeManager::instance().buildQSS(t));
+        AppDateTimeEdit de(QDateTime::currentDateTime());
+        de.setCalendarPopup(true);
+        de.resize(240, 40);
+        de.show();
+        QApplication::processEvents();
+        const QPixmap pm = de.grab();
+        de.hide();
+        if (pm.isNull())
+            return 0;
+        int cnt = 0;
+        for (int y = 0; y < pm.height(); ++y)
+            for (int x = pm.width() - 80; x < pm.width(); ++x) {
+                const QColor c = pm.toImage().pixelColor(x, y);
+                if (std::abs(c.red() - target.red()) <= 25 && std::abs(c.green() - target.green()) <= 25
+                    && std::abs(c.blue() - target.blue()) <= 25)
+                    ++cnt;
+            }
+        return cnt;
+    };
+    const int dtLightPx = dateTimeArrowPixels(Theme::Light, QColor(0x6B, 0x72, 0x80));
+    const int dtDarkPx = dateTimeArrowPixels(Theme::Dark, QColor(0x9A, 0xA0, 0xA8));
+    qInfo() << "QDateTimeEdit arrow pixels light=" << dtLightPx << "dark=" << dtDarkPx;
+    if (dtLightPx < 10 || dtDarkPx < 10) {
+        qCritical() << "QDateTimeEdit 时间选择器下拉三角未渲染";
         ++failures;
     }
 

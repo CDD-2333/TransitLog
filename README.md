@@ -30,7 +30,9 @@ cmake --build build
 ```
 
 **参考工具链**：Qt **6.11.0 MinGW 64 位**（本机 `D:/Qt/qt/6.11.0/mingw_64`，与 MemoRise 一致）。
-Qt Creator 直接打开 `CMakeLists.txt`，选择 Qt 6.11.0 MinGW kit 即可构建。
+
+**Qt Creator 打开 `TransitLog.pro`**（qmake，与 MemoRise 工作流一致），选择 Qt 6.11.0 MinGW kit 即可构建。
+也可用 `CMakeLists.txt` 构建（CI 走 CMake）。两种构建系统并存、源码相同。
 
 每次 push 由 GitHub Actions 自动编译并跑冒烟测试（`.github/workflows/build.yml`）：
 Ubuntu(GCC) + Windows(MinGW，镜像本地工具链) + Windows(MSVC 交叉检查)，版本均为 Qt 6.11.0。

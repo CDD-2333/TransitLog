@@ -1,11 +1,10 @@
 name: build
 
-# 自检：每次 push / PR 自动编译，并跑数据层与 GUI 冒烟测试。
-# 工具链对齐本地：Qt 6.11.0（Windows 用 MinGW 64 位，见 D:/Qt/qt/6.11.0/mingw_64）。
-#   - Ubuntu: GCC 编译 + 冒烟测试（≈ MinGW 行为）
-#   - Windows: MinGW 编译（镜像本地 Qt Creator 工具链）
-# 说明：install-qt-action 在 Windows runner 上装 Qt 曾有下载/解压失败，
-#   故 Windows 任务使用短安装路径 C:\Qt 且关闭缓存。
+# 自检：每次 push / PR 自动编译并跑数据层与 GUI 冒烟测试。
+# Ubuntu(GCC) 编译 + 测试（GCC 与本地 MinGW 同属 GCC 家族，行为接近）。
+# 说明：Windows 侧编译由本地 Qt Creator（Qt 6.11.0 MinGW，见 D:/Qt/qt/6.11.0/mingw_64）
+#   负责；曾尝试在 CI 用 aqt 装 Windows Qt，因 download.qt.io 对 windows 包下载不稳定
+#   连续失败，故不再配置 Windows CI 任务。
 
 on:
   push:
@@ -31,30 +30,3 @@ jobs:
         run: QT_QPA_PLATFORM=offscreen ./build/TransitLogDataSmoke
       - name: GUI smoke test
         run: QT_QPA_PLATFORM=offscreen ./build/TransitLogGuiSmoke
-
-  build-windows-mingw:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup MinGW toolchain
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: mingw64
-          update: true
-          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
-      # aqtinstall 对 Qt 6.11 Windows 的支持需用 master 分支（社区已知 workaround，
-      # 见 GPXSee "Use Qt 6.11 for Windows builds"）。发布版 3.3.* 在 Windows 装 6.11 会失败。
-      - name: Install Qt (MinGW 6.11.0)
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.11.0'
-          arch: 'win64_mingw'
-          dir: 'C:\Qt'
-          aqtsource: 'git+https://github.com/miurahr/aqtinstall.git'
-      - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH='C:\Qt\6.11.0\mingw_64'
-      - name: Build
-        run: cmake --build build

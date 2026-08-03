@@ -170,7 +170,7 @@ void DatabaseManager::syncDictionaries()
         const SeedMode modes[] = {
             {QStringLiteral("BUS"),    QStringLiteral("公交"),       kGlyphBus,   25.0,  3, true},
             {QStringLiteral("SUBWAY"), QStringLiteral("地铁"),       kGlyphTrain, 35.0,  4, true},
-            {QStringLiteral("RAIL"),   QStringLiteral("火车/高铁"),  kGlyphTrain, 200.0, 7, true},
+            {QStringLiteral("RAIL"),   QStringLiteral("火车"),       kGlyphTrain, 200.0, 7, true},
             {QStringLiteral("FLIGHT"), QStringLiteral("飞机"),       kGlyphPlane, 700.0, 8, true},
             {QStringLiteral("OTHER"),  QStringLiteral("其他"),       kGlyphFlag,  20.0,  9, true},
             {QStringLiteral("WALK"),   QStringLiteral("步行"),       kGlyphFlag,  5.0,   1, false},

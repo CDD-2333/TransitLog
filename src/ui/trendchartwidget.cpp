@@ -22,6 +22,10 @@ TrendChartWidget::TrendChartWidget(QWidget* parent)
     m_view = new QChartView(m_chart, this);
     m_view->setRenderHint(QPainter::Antialiasing, true);
     m_view->setMinimumHeight(220);
+    // 视图背景透明：深色主题下不出现白底（卡片 surface 色透出）。
+    // QGraphicsView 的 viewport 默认自动填充 QPalette::Base(白)，必须关掉。
+    m_view->setBackgroundBrush(Qt::NoBrush);
+    m_view->viewport()->setAutoFillBackground(false);
 
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);

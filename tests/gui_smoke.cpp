@@ -254,22 +254,27 @@ int main(int argc, char* argv[])
     QTimer::singleShot(640, [&]() {
         saveShot(QStringLiteral("catalog-light.png"), &w);
         ThemeManager::instance().setTheme(Theme::Dark);
-        if (QPushButton* b = findNav(QStringLiteral("行程")))
+        if (QPushButton* b = findNav(QStringLiteral("统计")))
             b->click();
     });
-    QTimer::singleShot(760, [&]() {
-        saveShot(QStringLiteral("trip-dark.png"), &w);
+    QTimer::singleShot(720, [&]() {
+        saveShot(QStringLiteral("stats-dark.png"), &w);   // 深色统计页（图表背景检查）
         if (QPushButton* b = findNav(QStringLiteral("图鉴")))
             b->click();
     });
-    QTimer::singleShot(840, [&]() {
+    QTimer::singleShot(800, [&]() {
         saveShot(QStringLiteral("catalog-dark.png"), &w);
+        if (QPushButton* b = findNav(QStringLiteral("行程")))
+            b->click();
+    });
+    QTimer::singleShot(880, [&]() {
+        saveShot(QStringLiteral("trip-dark.png"), &w);
         // 深色主题下再打开编辑对话框（含 起点/终点/开始时间/结束时间 四个输入框）
         dlg = new TripEditDialog(repo.transportModes(), repo.tripTags(), Trip());
         dlg->resize(460, 560);
         dlg->show();
     });
-    QTimer::singleShot(920, [&]() {
+    QTimer::singleShot(960, [&]() {
         saveShot(QStringLiteral("edit-dark.png"), dlg);
         dlg->close();
         dlg->deleteLater();

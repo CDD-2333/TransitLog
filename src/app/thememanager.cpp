@@ -183,6 +183,13 @@ QScrollBar:horizontal { background: transparent; height: 8px; }
 QScrollBar::handle:horizontal { background: %BORDER; border-radius: 4px; min-width: 30px; }
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0; }
 
+/* 页面容器 / 滚动区透明：背景由窗口主题色透出。
+   QScrollArea 的 viewport 默认用 QPalette::Base（白/浅色），深色主题下会形成
+   "白底+深色卡片"割裂，必须透明化（浅色主题同样正确）。 */
+QWidget#catalogPage, QWidget#statsPage { background-color: transparent; }
+QScrollArea { background: transparent; border: none; }
+QScrollArea > QWidget > QWidget { background: transparent; }
+
 /* 菜单 */
 QMenu { background-color: %SURFACE; border: 1px solid %BORDER; border-radius: 8px; padding: 6px; }
 QMenu::item { padding: 8px 24px; border-radius: 6px; color: %TEXT; }

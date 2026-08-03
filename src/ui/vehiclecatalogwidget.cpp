@@ -32,6 +32,7 @@ QString fmtDate(const QDateTime& dt)
 VehicleCatalogWidget::VehicleCatalogWidget(QWidget* parent)
     : QWidget(parent)
 {
+    setObjectName(QStringLiteral("catalogPage"));   // 配合 QSS：容器背景透明，由窗口主题色透出
     auto* root = new QVBoxLayout(this);
     root->setContentsMargins(20, 16, 20, 20);
     root->setSpacing(12);
@@ -48,7 +49,9 @@ VehicleCatalogWidget::VehicleCatalogWidget(QWidget* parent)
     auto* numScroll = new QScrollArea(this);
     numScroll->setWidgetResizable(true);
     numScroll->setFrameShape(QFrame::NoFrame);
+    numScroll->viewport()->setAutoFillBackground(false);   // 透明：由窗口主题色透出
     auto* numContainer = new QWidget;
+    numContainer->setAutoFillBackground(false);
     m_numLayout = new QFlowLayout(numContainer, 0, 12, 12);
     numScroll->setWidget(numContainer);
     root->addWidget(numScroll, 1);
@@ -65,7 +68,9 @@ VehicleCatalogWidget::VehicleCatalogWidget(QWidget* parent)
     auto* modelScroll = new QScrollArea(this);
     modelScroll->setWidgetResizable(true);
     modelScroll->setFrameShape(QFrame::NoFrame);
+    modelScroll->viewport()->setAutoFillBackground(false);
     auto* modelContainer = new QWidget;
+    modelContainer->setAutoFillBackground(false);
     m_modelLayout = new QFlowLayout(modelContainer, 0, 12, 12);
     modelScroll->setWidget(modelContainer);
     root->addWidget(modelScroll, 1);

@@ -38,3 +38,6 @@ Thumbs.db
 .DS_Store
 # aqtinstall 日志
 *.log
+
+# 本地截图（GUI 冒烟生成，含中文需在 Windows 查看）
+screenshots/

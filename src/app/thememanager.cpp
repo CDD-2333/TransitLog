@@ -84,6 +84,10 @@ ThemeManager::Palette ThemeManager::palette(Theme theme) const
 QString ThemeManager::buildQSS(Theme theme) const
 {
     const Palette p = palette(theme);
+    // 下拉箭头：线条 chevron，颜色 = 主题 text-secondary token（不新增颜色）
+    const QString arrowUrl = (theme == Theme::Dark)
+        ? QStringLiteral(":/resources/icons/chevron-down-dark.png")
+        : QStringLiteral(":/resources/icons/chevron-down-light.png");
     QString qss = QStringLiteral(R"(
 /* 基础 */
 QWidget { color: %TEXT; font-size: 14px; }
@@ -132,11 +136,36 @@ QLineEdit, QComboBox, QDateTimeEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubl
 QLineEdit:focus, QComboBox:focus, QDateTimeEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
     border-color: %PRIMARY;
 }
-QComboBox::drop-down { subcontrol-origin: padding; subcontrol-position: top right; width: 26px; border: none; }
+/* 下拉箭头：drop-down 区与主体融合（无独立背景块/分隔线），箭头用线条 chevron */
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 26px;
+    border: none;
+    background: transparent;
+}
+QComboBox::down-arrow {
+    image: url(%ARROW_URL);
+    width: 16px;
+    height: 16px;
+}
+QComboBox::drop-down:on { border: none; background: transparent; }
+QComboBox::down-arrow:on { image: url(%ARROW_URL); }
 QComboBox QAbstractItemView {
     background-color: %SURFACE; border: 1px solid %BORDER; color: %TEXT;
     selection-background-color: %PRIMARY_SOFT; selection-color: %PRIMARY;
 }
+
+/* 时间选择器（QDateTimeEdit 日历下拉按钮）同样处理 */
+QDateTimeEdit::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 26px;
+    border: none;
+    background: transparent;
+}
+QDateTimeEdit::down-button { image: url(%ARROW_URL); width: 16px; height: 16px; border: none; }
+QDateTimeEdit::down-button:on { image: url(%ARROW_URL); }
 
 /* 列表 */
 QListView { background-color: transparent; border: none; }
@@ -168,6 +197,7 @@ QLabel#modePercentLabel { color: %TEXT2; font-size: 12px; }
     // token -> 实际颜色值。
     // 注意替换顺序：含前缀的复合 token（%PRIMARY_SOFT 等）必须先替换，
     // 否则 %PRIMARY 先被替换会导致 %PRIMARY_SOFT 残留成 "#4A7C6F_SOFT"。
+    qss.replace(QStringLiteral("%ARROW_URL"), arrowUrl);
     qss.replace(QStringLiteral("%PRIMARY_SOFT"), p.primarySoft);
     qss.replace(QStringLiteral("%PRIMARY_HOVER"), p.primaryHover);
     qss.replace(QStringLiteral("%SURFACE_ALT"), p.surfaceAlt);

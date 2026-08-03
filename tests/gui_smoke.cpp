@@ -1,7 +1,11 @@
 // GUI 冒烟测试：构造主窗口、注入行程数据、渲染并抓图，验证不崩溃。
 // 用法：QT_QPA_PLATFORM=offscreen ./TransitLogGuiSmoke
 #include <QApplication>
+#include <QComboBox>
 #include <QDebug>
+#include <QDir>
+#include <QFontDatabase>
+#include <QPushButton>
 #include <QStandardPaths>
 #include <QTimer>
 
@@ -11,6 +15,7 @@
 #include "app/thememanager.h"
 #include "repo/triprepository.h"
 #include "ui/mainwindow.h"
+#include "ui/tripeditdialog.h"
 
 int main(int argc, char* argv[])
 {
@@ -66,30 +71,97 @@ int main(int argc, char* argv[])
             qCritical() << "save t3 failed";
     }
 
+    // 与 main.cpp 一致：注册 Tabler 图标字体（交通方式图标渲染）
+    QFontDatabase::addApplicationFont(QStringLiteral(":/resources/fonts/tabler-icons.ttf"));
+
     app.setStyleSheet(ThemeManager::instance().buildQSS(ThemeManager::instance().currentTheme()));
+
+    int failures = 0;
+
+    // QComboBox 下拉箭头渲染断言：浅色箭头 #6B7280 / 深色 #9AA0A8（text-secondary token）
+    auto comboArrowPixels = [&](Theme t, const QColor& target) {
+        ThemeManager::instance().setTheme(t);
+        app.setStyleSheet(ThemeManager::instance().buildQSS(t));
+        QComboBox cb;
+        cb.addItem(QStringLiteral("选项"));
+        cb.resize(220, 40);
+        cb.show();
+        QApplication::processEvents();
+        const QPixmap pm = cb.grab();
+        cb.hide();
+        if (pm.isNull())
+            return 0;
+        int cnt = 0;
+        for (int y = 0; y < pm.height(); ++y)
+            for (int x = pm.width() - 80; x < pm.width(); ++x) {
+                const QColor c = pm.toImage().pixelColor(x, y);
+                if (std::abs(c.red() - target.red()) <= 25 && std::abs(c.green() - target.green()) <= 25
+                    && std::abs(c.blue() - target.blue()) <= 25)
+                    ++cnt;
+            }
+        return cnt;
+    };
+    const int lightPx = comboArrowPixels(Theme::Light, QColor(0x6B, 0x72, 0x80));
+    const int darkPx = comboArrowPixels(Theme::Dark, QColor(0x9A, 0xA0, 0xA8));
+    qInfo() << "combo arrow pixels light=" << lightPx << "dark=" << darkPx;
+    if (lightPx < 10 || darkPx < 10) {
+        qCritical() << "QComboBox 下拉箭头未渲染";
+        ++failures;
+    }
+
+    ThemeManager::instance().setTheme(Theme::Light);
+    app.setStyleSheet(ThemeManager::instance().buildQSS(Theme::Light));
 
     MainWindow w;
     w.resize(720, 560);
     w.show();
 
-    // 异步渲染后抓图验证
-    int failures = 0;
-    QTimer::singleShot(200, [&]() {
-        const QPixmap trips = w.grab();
-        if (trips.isNull() || trips.width() == 0) {
-            qCritical() << "grab trips page failed";
+    // 截图目录（可选）：设置 QT_SCREENSHOT_DIR 时保存浅/深主题截图供人工核对
+    const QString shotDir = qEnvironmentVariable("QT_SCREENSHOT_DIR");
+    if (!shotDir.isEmpty())
+        QDir().mkpath(shotDir);
+
+    // 异步渲染后抓图验证（分步延时，确保各控件完成绘制）
+    auto navStats = [&]() -> QPushButton* {
+        const auto btns = w.findChildren<QPushButton*>();
+        for (QPushButton* b : btns)
+            if (b->text().contains(QStringLiteral("统计")))
+                return b;
+        return nullptr;
+    };
+    auto saveShot = [&](const QString& name, QWidget* target) {
+        const QPixmap pm = target->grab();
+        if (pm.isNull() || pm.width() == 0) {
+            qCritical() << "grab" << name << "failed";
             ++failures;
+        } else if (!shotDir.isEmpty()) {
+            pm.save(shotDir + '/' + name);
         }
-        // 切到统计页再抓
-        QTimer::singleShot(50, [&]() {
-            const QPixmap stats = w.grab();
-            if (stats.isNull() || stats.width() == 0) {
-                qCritical() << "grab stats page failed";
-                ++failures;
-            }
-            qInfo() << (failures == 0 ? "GUI_SMOKE_OK" : "GUI_SMOKE_FAIL");
-            app.exit(failures == 0 ? 0 : 1);
-        });
+    };
+
+    TripEditDialog* dlg = nullptr;
+    QTimer::singleShot(200, [&]() {
+        saveShot(QStringLiteral("trip-light.png"), &w);
+        dlg = new TripEditDialog(repo.transportModes(), repo.tripTags(), Trip());
+        dlg->resize(460, 560);
+        dlg->show();
+    });
+    QTimer::singleShot(380, [&]() {
+        saveShot(QStringLiteral("edit-light.png"), dlg);
+        dlg->close();
+        dlg->deleteLater();
+        dlg = nullptr;
+        if (QPushButton* b = navStats())
+            b->click();
+    });
+    QTimer::singleShot(560, [&]() {
+        saveShot(QStringLiteral("stats-light.png"), &w);
+        ThemeManager::instance().setTheme(Theme::Dark);
+    });
+    QTimer::singleShot(740, [&]() {
+        saveShot(QStringLiteral("trip-dark.png"), &w);
+        qInfo() << (failures == 0 ? "GUI_SMOKE_OK" : "GUI_SMOKE_FAIL");
+        app.exit(failures == 0 ? 0 : 1);
     });
 
     return app.exec();

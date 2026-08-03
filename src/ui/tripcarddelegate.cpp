@@ -9,6 +9,10 @@
 #include "app/thememanager.h"
 #include "model/triplistmodel.h"
 
+namespace {
+constexpr QChar kGlyphFlag(0xEAA6); // Tabler flag（交通方式图标缺失时的兜底）
+} // namespace
+
 TripCardDelegate::TripCardDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
@@ -60,14 +64,14 @@ void TripCardDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     const int left = r.left() + 14;
     const int top = r.top() + 12;
 
-    // emoji 图标
+    // 交通方式图标（Tabler 字形，替代 emoji）
     const QString icon = index.data(TripListModel::ModeIconRole).toString();
-    QFont iconFont = option.font;
+    QFont iconFont(QStringLiteral("tabler-icons"));
     iconFont.setPixelSize(24);
     painter->setFont(iconFont);
     painter->setPen(QColor(pal.text));
     painter->drawText(QRect(left, top, 34, 30), Qt::AlignCenter,
-                      icon.isEmpty() ? QStringLiteral("🚩") : icon);
+                      icon.isEmpty() ? QString(kGlyphFlag) : icon);
 
     const int tx = left + 40;
 

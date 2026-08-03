@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
     const QString uid = Session::instance().userId();
     CHECK(!uid.isEmpty(), "用户 id 非空");
 
-    // 5. 字典种子
-    CHECK(repo.transportModes().size() > 5, "交通方式字典已种子化");
+    // 5. 字典（含 5 个启用交通方式：公交/地铁/火车/飞机/其他；4 个标签）
+    CHECK(repo.transportModes().size() >= 5, "交通方式字典已种子化");
     CHECK(repo.tripTags().size() >= 4, "标签字典已种子化");
 
     // 6. 新增行程（完整数据）

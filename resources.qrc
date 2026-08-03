@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/fonts/tabler-icons.ttf</file>
+        <file>resources/icons/chevron-down-light.png</file>
+        <file>resources/icons/chevron-down-dark.png</file>
+        <file>resources/icons/app-icon.png</file>
+    </qresource>
+</RCC>

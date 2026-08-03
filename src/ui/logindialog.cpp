@@ -64,8 +64,6 @@ void LoginDialog::buildUI()
         regForm->setSpacing(10);
         m_regUser = new QLineEdit(regPage);
         m_regUser->setPlaceholderText(QStringLiteral("用户名"));
-        m_regNick = new QLineEdit(regPage);
-        m_regNick->setPlaceholderText(QStringLiteral("昵称（可选）"));
         m_regPass = new QLineEdit(regPage);
         m_regPass->setEchoMode(QLineEdit::Password);
         m_regPass->setPlaceholderText(QStringLiteral("密码"));
@@ -73,7 +71,6 @@ void LoginDialog::buildUI()
         m_regPass2->setEchoMode(QLineEdit::Password);
         m_regPass2->setPlaceholderText(QStringLiteral("确认密码"));
         regForm->addRow(QStringLiteral("用户名"), m_regUser);
-        regForm->addRow(QStringLiteral("昵称"), m_regNick);
         regForm->addRow(QStringLiteral("密码"), m_regPass);
         regForm->addRow(QStringLiteral("确认密码"), m_regPass2);
         auto* regBtn = new QPushButton(QStringLiteral("注册并登录"), regPage);
@@ -124,7 +121,7 @@ void LoginDialog::onRegister()
     }
     QString error;
     if (!AuthController::instance().registerUser(m_regUser->text(), m_regPass->text(),
-                                                 m_regNick->text(), error)) {
+                                                 QString(), error)) {
         showError(error);
         return;
     }

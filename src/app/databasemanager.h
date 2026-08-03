@@ -22,7 +22,7 @@ private:
     DatabaseManager() = default;
 
     bool migrate();
-    void seedDictionaries();
+    void syncDictionaries();
 
     QSqlDatabase m_db;
     QString m_dbPath;

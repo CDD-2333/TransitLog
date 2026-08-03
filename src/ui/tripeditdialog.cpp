@@ -13,6 +13,8 @@
 
 namespace {
 
+constexpr QChar kGlyphFlag(0xEAA6); // Tabler flag
+
 QDoubleValidator* kmValidator(QObject* parent)
 {
     auto* v = new QDoubleValidator(0.0, 100000.0, 2, parent);
@@ -76,7 +78,7 @@ void TripEditDialog::buildUI()
         m_modeCombo->addItem(label, m.code);
     }
     if (m_modeCombo->count() == 0)
-        m_modeCombo->addItem(QStringLiteral("🚩 其他"), QStringLiteral("OTHER"));
+        m_modeCombo->addItem(QString(kGlyphFlag) + QStringLiteral(" 其他"), QStringLiteral("OTHER"));
     form->addRow(QStringLiteral("交通方式"), m_modeCombo);
 
     // 起终点

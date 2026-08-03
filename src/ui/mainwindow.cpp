@@ -24,6 +24,13 @@
 #include "ui/tripcarddelegate.h"
 #include "ui/tripeditdialog.h"
 
+namespace {
+// Tabler 图标字形（替代 emoji）
+constexpr QChar kGlyphSun(0xEB30);
+constexpr QChar kGlyphMoon(0xEAF8);
+constexpr QChar kGlyphSettings(0xEB20);
+} // namespace
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -72,7 +79,12 @@ void MainWindow::setupUI()
     topLayout->addWidget(m_navStats);
     topLayout->addStretch();
 
-    auto* themeBtn = new QPushButton(QStringLiteral("🌓 主题"), topBar);
+    const auto themeLabel = [](Theme t) {
+        return (t == Theme::Dark)
+            ? QString(kGlyphSun) + QStringLiteral(" 浅色")
+            : QString(kGlyphMoon) + QStringLiteral(" 深色");
+    };
+    auto* themeBtn = new QPushButton(themeLabel(ThemeManager::instance().currentTheme()), topBar);
     themeBtn->setObjectName(QStringLiteral("iconButton"));
     topLayout->addWidget(themeBtn);
 
@@ -80,7 +92,7 @@ void MainWindow::setupUI()
     m_userLabel->setObjectName(QStringLiteral("hintLabel"));
     topLayout->addWidget(m_userLabel);
 
-    auto* settingsBtn = new QPushButton(QStringLiteral("⚙ 设置"), topBar);
+    auto* settingsBtn = new QPushButton(QString(kGlyphSettings) + QStringLiteral(" 设置"), topBar);
     settingsBtn->setObjectName(QStringLiteral("iconButton"));
     topLayout->addWidget(settingsBtn);
 
@@ -149,8 +161,11 @@ void MainWindow::setupUI()
     connect(delShortcut, &QShortcut::activated, this, &MainWindow::onDeleteSelected);
 
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
-            [this](Theme t) {
+            [this, themeBtn](Theme t) {
                 qApp->setStyleSheet(ThemeManager::instance().buildQSS(t));
+                themeBtn->setText((t == Theme::Dark)
+                                      ? QString(kGlyphSun) + QStringLiteral(" 浅色")
+                                      : QString(kGlyphMoon) + QStringLiteral(" 深色"));
                 m_tripList->viewport()->update();
             });
 }

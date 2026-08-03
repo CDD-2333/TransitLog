@@ -51,6 +51,9 @@ HEADERS += \
     src/ui/tripcarddelegate.h \
     src/ui/tripeditdialog.h
 
+# 资源：Tabler 图标字体 + 下拉箭头 PNG + 应用图标
+RESOURCES += resources.qrc
+
 # Windows 可执行文件图标（后续加入 app.rc 后启用）
 #win32: RC_FILE = app.rc
 

@@ -51,14 +51,16 @@ qt_add_library(transitlog_core STATIC ${TRANSITLOG_SOURCES})
 target_include_directories(transitlog_core PUBLIC src)
 target_link_libraries(transitlog_core PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql)
 
-qt_add_executable(TransitLog src/main.cpp)
+# 资源(.qrc)直接进可执行目标而非静态库：
+# 静态库里的 qrc 资源注册对象可能被链接器丢弃，导致资源加载失败。
+qt_add_executable(TransitLog src/main.cpp resources.qrc)
 target_link_libraries(TransitLog PRIVATE transitlog_core)
 
 if(BUILD_TESTS)
     qt_add_executable(TransitLogDataSmoke tests/data_smoke.cpp)
     target_link_libraries(TransitLogDataSmoke PRIVATE transitlog_core)
 
-    qt_add_executable(TransitLogGuiSmoke tests/gui_smoke.cpp)
+    qt_add_executable(TransitLogGuiSmoke tests/gui_smoke.cpp resources.qrc)
     target_link_libraries(TransitLogGuiSmoke PRIVATE transitlog_core)
 endif()
 

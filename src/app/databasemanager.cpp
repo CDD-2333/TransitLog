@@ -53,7 +53,10 @@ bool DatabaseManager::open()
     pragma.exec(QStringLiteral("PRAGMA foreign_keys = ON"));
     pragma.exec(QStringLiteral("PRAGMA encoding = 'UTF-8'"));
 
-    return migrate();
+    if (!migrate())
+        return false;
+    syncDictionaries(); // 每次启动同步字典（幂等，兼容已有数据库）
+    return true;
 }
 
 void DatabaseManager::close()
@@ -140,82 +143,97 @@ bool DatabaseManager::migrate()
             m_lastError = q.lastError().text();
             return false;
         }
-        seedDictionaries();
     }
     return true;
 }
 
-void DatabaseManager::seedDictionaries()
-{
-    // 交通方式字典
-    {
-        QSqlQuery count(m_db);
-        count.exec(QStringLiteral("SELECT COUNT(*) FROM transport_mode"));
-        bool hasRows = false;
-        if (count.next())
-            hasRows = count.value(0).toInt() > 0;
+// Tabler 图标字体的字形码（见 resources/fonts/tabler-icons.ttf）
+namespace {
+constexpr QChar kGlyphBus(0xEBE4);
+constexpr QChar kGlyphTrain(0xED96);
+constexpr QChar kGlyphPlane(0xEB6F);
+constexpr QChar kGlyphFlag(0xEAA6);
+} // namespace
 
-        if (!hasRows) {
-            struct SeedMode {
-                QString code, name, icon;
-                double speed;
-                int sort;
-            };
-            const SeedMode modes[] = {
-                {QStringLiteral("WALK"),   QStringLiteral("步行"),     QStringLiteral("🚶"), 5.0,   1},
-                {QStringLiteral("BIKE"),   QStringLiteral("骑行"),     QStringLiteral("🚲"), 15.0,  2},
-                {QStringLiteral("BUS"),    QStringLiteral("公交"),     QStringLiteral("🚌"), 25.0,  3},
-                {QStringLiteral("SUBWAY"), QStringLiteral("地铁"),     QStringLiteral("🚇"), 35.0,  4},
-                {QStringLiteral("DRIVE"),  QStringLiteral("驾车"),     QStringLiteral("🚗"), 40.0,  5},
-                {QStringLiteral("TAXI"),   QStringLiteral("出租车"),   QStringLiteral("🚕"), 40.0,  6},
-                {QStringLiteral("RAIL"),   QStringLiteral("火车/高铁"), QStringLiteral("🚄"), 200.0, 7},
-                {QStringLiteral("FLIGHT"), QStringLiteral("飞机"),     QStringLiteral("✈️"), 700.0, 8},
-                {QStringLiteral("OTHER"),  QStringLiteral("其他"),     QStringLiteral("🚩"), 20.0,  9},
-            };
-            for (const SeedMode& m : modes) {
-                QSqlQuery ins(m_db);
-                ins.prepare(QStringLiteral(
-                    "INSERT INTO transport_mode (code, name, icon, default_speed_kmh, sort_order)"
-                    " VALUES (?,?,?,?,?)"));
-                ins.addBindValue(m.code);
-                ins.addBindValue(m.name);
-                ins.addBindValue(m.icon);
-                ins.addBindValue(m.speed);
-                ins.addBindValue(m.sort);
-                ins.exec();
-            }
+// 字典同步：幂等，每次启动执行。新装库插入种子；已有库更新名称/图标、软删停用项。
+void DatabaseManager::syncDictionaries()
+{
+    // 交通方式字典（icon 存 Tabler 字形字符，替代 emoji；WALK/BIKE/DRIVE/TAXI 停用）
+    {
+        struct SeedMode {
+            QString code, name;
+            QChar icon;
+            double speed;
+            int sort;
+            bool active;
+        };
+        const SeedMode modes[] = {
+            {QStringLiteral("BUS"),    QStringLiteral("公交"),       kGlyphBus,   25.0,  3, true},
+            {QStringLiteral("SUBWAY"), QStringLiteral("地铁"),       kGlyphTrain, 35.0,  4, true},
+            {QStringLiteral("RAIL"),   QStringLiteral("火车/高铁"),  kGlyphTrain, 200.0, 7, true},
+            {QStringLiteral("FLIGHT"), QStringLiteral("飞机"),       kGlyphPlane, 700.0, 8, true},
+            {QStringLiteral("OTHER"),  QStringLiteral("其他"),       kGlyphFlag,  20.0,  9, true},
+            {QStringLiteral("WALK"),   QStringLiteral("步行"),       kGlyphFlag,  5.0,   1, false},
+            {QStringLiteral("BIKE"),   QStringLiteral("骑行"),       kGlyphFlag,  15.0,  2, false},
+            {QStringLiteral("DRIVE"),  QStringLiteral("驾车"),       kGlyphFlag,  40.0,  5, false},
+            {QStringLiteral("TAXI"),   QStringLiteral("出租车"),     kGlyphFlag,  40.0,  6, false},
+        };
+        for (const SeedMode& m : modes) {
+            QSqlQuery ins(m_db);
+            ins.prepare(QStringLiteral(
+                "INSERT OR IGNORE INTO transport_mode (code, name, icon, default_speed_kmh, sort_order, is_active)"
+                " VALUES (?,?,?,?,?,?)"));
+            ins.addBindValue(m.code);
+            ins.addBindValue(m.name);
+            ins.addBindValue(QString(m.icon));
+            ins.addBindValue(m.speed);
+            ins.addBindValue(m.sort);
+            ins.addBindValue(m.active ? 1 : 0);
+            ins.exec();
+
+            QSqlQuery up(m_db);
+            up.prepare(QStringLiteral(
+                "UPDATE transport_mode SET name=?, icon=?, default_speed_kmh=?, sort_order=?, is_active=? WHERE code=?"));
+            up.addBindValue(m.name);
+            up.addBindValue(QString(m.icon));
+            up.addBindValue(m.speed);
+            up.addBindValue(m.sort);
+            up.addBindValue(m.active ? 1 : 0);
+            up.addBindValue(m.code);
+            up.exec();
         }
     }
 
-    // 行程标签字典
+    // 行程标签字典（OTHER 显示名改为「运转」）
     {
-        QSqlQuery count(m_db);
-        count.exec(QStringLiteral("SELECT COUNT(*) FROM trip_tag"));
-        bool hasRows = false;
-        if (count.next())
-            hasRows = count.value(0).toInt() > 0;
+        struct SeedTag {
+            QString code, name, color;
+            int sort;
+        };
+        const SeedTag tags[] = {
+            {QStringLiteral("COMMUTE"),  QStringLiteral("通勤"), QStringLiteral("#4A7C6F"), 1},
+            {QStringLiteral("BUSINESS"), QStringLiteral("出差"), QStringLiteral("#2D6B9F"), 2},
+            {QStringLiteral("TRAVEL"),   QStringLiteral("旅游"), QStringLiteral("#B5742D"), 3},
+            {QStringLiteral("OTHER"),    QStringLiteral("运转"), QStringLiteral("#888888"), 4},
+        };
+        for (const SeedTag& t : tags) {
+            QSqlQuery ins(m_db);
+            ins.prepare(QStringLiteral(
+                "INSERT OR IGNORE INTO trip_tag (code, name, color, sort_order) VALUES (?,?,?,?)"));
+            ins.addBindValue(t.code);
+            ins.addBindValue(t.name);
+            ins.addBindValue(t.color);
+            ins.addBindValue(t.sort);
+            ins.exec();
 
-        if (!hasRows) {
-            struct SeedTag {
-                QString code, name, color;
-                int sort;
-            };
-            const SeedTag tags[] = {
-                {QStringLiteral("COMMUTE"), QStringLiteral("通勤"), QStringLiteral("#4A7C6F"), 1},
-                {QStringLiteral("BUSINESS"), QStringLiteral("出差"), QStringLiteral("#2D6B9F"), 2},
-                {QStringLiteral("TRAVEL"), QStringLiteral("旅游"), QStringLiteral("#B5742D"), 3},
-                {QStringLiteral("OTHER"), QStringLiteral("其他"), QStringLiteral("#888888"), 4},
-            };
-            for (const SeedTag& t : tags) {
-                QSqlQuery ins(m_db);
-                ins.prepare(QStringLiteral(
-                    "INSERT INTO trip_tag (code, name, color, sort_order) VALUES (?,?,?,?)"));
-                ins.addBindValue(t.code);
-                ins.addBindValue(t.name);
-                ins.addBindValue(t.color);
-                ins.addBindValue(t.sort);
-                ins.exec();
-            }
+            QSqlQuery up(m_db);
+            up.prepare(QStringLiteral(
+                "UPDATE trip_tag SET name=?, color=?, sort_order=? WHERE code=?"));
+            up.addBindValue(t.name);
+            up.addBindValue(t.color);
+            up.addBindValue(t.sort);
+            up.addBindValue(t.code);
+            up.exec();
         }
     }
 }

@@ -26,7 +26,6 @@ private:
     QLineEdit* m_loginUser = nullptr;
     QLineEdit* m_loginPass = nullptr;
     QLineEdit* m_regUser = nullptr;
-    QLineEdit* m_regNick = nullptr;
     QLineEdit* m_regPass = nullptr;
     QLineEdit* m_regPass2 = nullptr;
     QLabel* m_errorLabel = nullptr;

@@ -1,11 +1,14 @@
 // GUI 冒烟测试：构造主窗口、注入行程数据、渲染并抓图，验证不崩溃。
 // 用法：QT_QPA_PLATFORM=offscreen ./TransitLogGuiSmoke
 #include <QApplication>
+#include <QCalendarWidget>
 #include <QComboBox>
 #include <QDateTimeEdit>
 #include <QDebug>
 #include <QDir>
+#include <QEvent>
 #include <QFontDatabase>
+#include <QMouseEvent>
 #include <QPushButton>
 #include <QStandardPaths>
 #include <QTimer>
@@ -111,34 +114,41 @@ int main(int argc, char* argv[])
         ++failures;
     }
 
-    // QDateTimeEdit（时间选择器，calendarPopup）下拉三角：与 QComboBox 同款线条 chevron
-    auto dateTimeArrowPixels = [&](Theme t, const QColor& target) {
-        ThemeManager::instance().setTheme(t);
-        app.setStyleSheet(ThemeManager::instance().buildQSS(t));
+    // QDateTimeEdit（时间选择器）：无箭头/按钮，点击输入框任意位置应弹出日历
+    struct ShowFilter : QObject {
+        int showCount = 0;
+        bool eventFilter(QObject* o, QEvent* e) override
+        {
+            if (e->type() == QEvent::Show)
+                ++showCount;
+            return QObject::eventFilter(o, e);
+        }
+    };
+    auto dateTimeClickOpensCalendar = [&]() {
+        ThemeManager::instance().setTheme(Theme::Light);
+        app.setStyleSheet(ThemeManager::instance().buildQSS(Theme::Light));
         AppDateTimeEdit de(QDateTime::currentDateTime());
         de.setCalendarPopup(true);
         de.resize(240, 40);
         de.show();
         QApplication::processEvents();
-        const QPixmap pm = de.grab();
+        ShowFilter f;
+        de.calendarWidget()->installEventFilter(&f);
+        // 点击输入框中间（非右侧按钮区）
+        QMouseEvent press(QEvent::MouseButtonPress, QPointF(120, 20), Qt::LeftButton,
+                          Qt::LeftButton, Qt::NoModifier);
+        QMouseEvent rel(QEvent::MouseButtonRelease, QPointF(120, 20), Qt::LeftButton,
+                        Qt::LeftButton, Qt::NoModifier);
+        QApplication::sendEvent(&de, &press);
+        QApplication::sendEvent(&de, &rel);
+        QApplication::processEvents();
         de.hide();
-        if (pm.isNull())
-            return 0;
-        int cnt = 0;
-        for (int y = 0; y < pm.height(); ++y)
-            for (int x = pm.width() - 80; x < pm.width(); ++x) {
-                const QColor c = pm.toImage().pixelColor(x, y);
-                if (std::abs(c.red() - target.red()) <= 25 && std::abs(c.green() - target.green()) <= 25
-                    && std::abs(c.blue() - target.blue()) <= 25)
-                    ++cnt;
-            }
-        return cnt;
+        return f.showCount;
     };
-    const int dtLightPx = dateTimeArrowPixels(Theme::Light, QColor(0x6B, 0x72, 0x80));
-    const int dtDarkPx = dateTimeArrowPixels(Theme::Dark, QColor(0x9A, 0xA0, 0xA8));
-    qInfo() << "QDateTimeEdit arrow pixels light=" << dtLightPx << "dark=" << dtDarkPx;
-    if (dtLightPx < 10 || dtDarkPx < 10) {
-        qCritical() << "QDateTimeEdit 时间选择器下拉三角未渲染";
+    const int calShows = dateTimeClickOpensCalendar();
+    qInfo() << "QDateTimeEdit 点击输入框弹出日历 Show 次数=" << calShows;
+    if (calShows < 1) {
+        qCritical() << "QDateTimeEdit 点击输入框未弹出日历";
         ++failures;
     }
 

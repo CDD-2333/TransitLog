@@ -167,9 +167,8 @@ QComboBox QAbstractItemView {
     selection-background-color: %PRIMARY_SOFT; selection-color: %PRIMARY;
 }
 
-/* 时间选择器（QDateTimeEdit）微调按钮：彻底隐藏 up/down 按钮，
-   消除按钮区色块/分隔线带来的视觉突兀。箭头由 AppDateTimeEdit::paintEvent 自绘；
-   点击右侧仍可弹出日历（calendarPopup 有独立命中区，不依赖按钮可见性）。 */
+/* 时间选择器（QDateTimeEdit）：彻底隐藏 up/down 按钮与箭头，输入框呈纯净样式；
+   点击任意位置由 AppDateTimeEdit 重定向到内部触发区弹出日历。 */
 QDateTimeEdit::up-button { width: 0; height: 0; border: none; background: transparent; }
 QDateTimeEdit::down-button { width: 0; height: 0; border: none; background: transparent; }
 QDateTimeEdit::up-arrow { image: none; }

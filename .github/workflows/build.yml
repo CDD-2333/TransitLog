@@ -45,13 +45,15 @@ jobs:
           msystem: mingw64
           update: true
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
+      # aqtinstall 对 Qt 6.11 Windows 的支持需用 master 分支（社区已知 workaround，
+      # 见 GPXSee "Use Qt 6.11 for Windows builds"）。发布版 3.3.* 在 Windows 装 6.11 会失败。
       - name: Install Qt (MinGW 6.11.0)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.11.0'
           arch: 'win64_mingw'
           dir: 'C:\Qt'
-          aqtversion: '==3.3.*'
+          aqtsource: 'git+https://github.com/miurahr/aqtinstall.git'
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH='C:\Qt\6.11.0\mingw_64'
       - name: Build

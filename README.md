@@ -4,7 +4,8 @@
 
 - 技术栈：**Qt 6 + C++17 + SQLite**（CMake 构建）
 - 主题：延续 MemoRise 的浅色纸感 Material 风格，并新增可切换深色主题
-- 范围：本地账号、行程 CRUD（含进行中行程）、交通方式字典、行程标签、统计、主题、备份导出
+- 范围：本地账号、行程 CRUD（含进行中行程）、交通方式字典、行程标签、主题、备份导出
+- P1：统计仪表盘（核心数字卡片 + Qt Charts 月度趋势 + 交通方式筛选）、车型图鉴（车次/车型卡片墙）
 - 架构：UI（View）→ ViewModel/AuthController → Repository（SQL 唯一出口）→ SQLite；SQL 不进入 UI 槽函数
 
 ## 当前进度（2026-08-03）
@@ -55,7 +56,7 @@ QT_QPA_PLATFORM=offscreen ./build/TransitLogGuiSmoke
 | 路径 | 说明 |
 |---|---|
 | `src/app/` | 数据库管理、主题 token、会话、认证控制器、PBKDF2 |
-| `src/model/` | 实体、行程列表 Model、格式化工具 |
+| `src/model/` | 实体、行程列表 Model、统计 Service、格式化工具 |
 | `src/repo/` | 唯一写 SQL 的 Repository 层 |
-| `src/ui/` | 主窗口、登录、编辑、统计、设置、卡片 delegate、图表 |
+| `src/ui/` | 主窗口、登录、编辑、统计、图鉴、设置、卡片 delegate、Qt Charts 趋势图、流式布局 |
 | `docs/` | 设计文档（DB schema / 线框 / 需求评审） |

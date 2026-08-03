@@ -120,6 +120,8 @@ CREATE TABLE IF NOT EXISTS trip_record (
     distance_m    INTEGER,                      -- 米，整数（避免浮点误差做聚合）
     cost_fen      INTEGER,                      -- 分，整数（显示时 /100 元）
     tag_id        TEXT REFERENCES trip_tag(code),  -- 可空：P0 单标签
+    vehicle_no    TEXT,                         -- v2 新增：车次/航班号（302路、K262次、CA1234），可空
+    vehicle_model TEXT,                         -- v2 新增：车型（CR400AF、DF4D），可空
     note          TEXT NOT NULL DEFAULT '',
     is_deleted    INTEGER NOT NULL DEFAULT 0,   -- 软删除
     created_at    INTEGER NOT NULL,
@@ -129,7 +131,11 @@ CREATE TABLE IF NOT EXISTS trip_record (
 CREATE INDEX IF NOT EXISTS idx_trip_user_time ON trip_record(user_id, start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_trip_user_del   ON trip_record(user_id, is_deleted);
 CREATE INDEX IF NOT EXISTS idx_trip_mode       ON trip_record(mode_code);
+CREATE INDEX IF NOT EXISTS idx_trip_user_vehicle_no  ON trip_record(user_id, vehicle_no);   -- v2
+CREATE INDEX IF NOT EXISTS idx_trip_user_vehicle_mdl ON trip_record(user_id, vehicle_model); -- v2
 ```
+
+> **迁移 v2**：已有数据库通过 `ALTER TABLE trip_record ADD COLUMN vehicle_no/vehicle_model` 增量升级（`PRAGMA user_version` 驱动，`src/app/databasemanager.cpp`）。
 
 ## 3. 字段设计要点（为什么这样设计）
 

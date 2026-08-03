@@ -193,6 +193,21 @@ int main(int argc, char* argv[])
     });
     QTimer::singleShot(740, [&]() {
         saveShot(QStringLiteral("trip-dark.png"), &w);
+        // 时间选择器单独渲染（浅/深），供人工核对箭头与按钮区是否干净
+        if (!shotDir.isEmpty()) {
+            ThemeManager::instance().setTheme(Theme::Light);
+            app.setStyleSheet(ThemeManager::instance().buildQSS(Theme::Light));
+            AppDateTimeEdit de(QDateTime::currentDateTime());
+            de.setCalendarPopup(true);
+            de.resize(260, 40);
+            de.show();
+            QApplication::processEvents();
+            de.grab().save(shotDir + QStringLiteral("/datetime-light.png"));
+            ThemeManager::instance().setTheme(Theme::Dark);
+            app.setStyleSheet(ThemeManager::instance().buildQSS(Theme::Dark));
+            de.grab().save(shotDir + QStringLiteral("/datetime-dark.png"));
+            de.hide();
+        }
         qInfo() << (failures == 0 ? "GUI_SMOKE_OK" : "GUI_SMOKE_FAIL");
         app.exit(failures == 0 ? 0 : 1);
     });

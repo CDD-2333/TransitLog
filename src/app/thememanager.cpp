@@ -167,26 +167,14 @@ QComboBox QAbstractItemView {
     selection-background-color: %PRIMARY_SOFT; selection-color: %PRIMARY;
 }
 
-/* 时间选择器（QDateTimeEdit）下拉三角：QSS 子控件画箭头不可靠（会被缩放），
-   故由 AppDateTimeEdit::paintEvent 自行绘制同款 chevron。
-   这里只负责隐藏默认 up-button 并把 down-button 区域做成透明（与主体融合），
-   并用 image:none 抑制默认箭头，避免双画。 */
-QDateTimeEdit::up-button {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 0;
-    height: 0;
-    border: none;
-    background: transparent;
-}
-QDateTimeEdit::down-button {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-    width: 26px;
-    border: none;
-    background: transparent;
-}
+/* 时间选择器（QDateTimeEdit）微调按钮：彻底隐藏 up/down 按钮，
+   消除按钮区色块/分隔线带来的视觉突兀。箭头由 AppDateTimeEdit::paintEvent 自绘；
+   点击右侧仍可弹出日历（calendarPopup 有独立命中区，不依赖按钮可见性）。 */
+QDateTimeEdit::up-button { width: 0; height: 0; border: none; background: transparent; }
+QDateTimeEdit::down-button { width: 0; height: 0; border: none; background: transparent; }
+QDateTimeEdit::up-arrow { image: none; }
 QDateTimeEdit::down-arrow { image: none; }
+QDateTimeEdit::up-arrow:on { image: none; }
 QDateTimeEdit::down-arrow:on { image: none; }
 
 /* 列表 */

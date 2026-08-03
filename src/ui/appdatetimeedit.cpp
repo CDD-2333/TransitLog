@@ -17,9 +17,9 @@ void AppDateTimeEdit::paintEvent(QPaintEvent* event)
     if (arrow.isNull())
         return;
 
-    const int buttonWidth = 26;  // 与 QSS 中 down-button 宽度一致
     const int s = 16;
-    const int x = width() - buttonWidth + (buttonWidth - s) / 2;
+    const int rightMargin = 12;  // 与输入框右侧 padding 一致，贴右缘放置
+    const int x = width() - rightMargin - s;
     const int y = (height() - s) / 2;
 
     QPainter p(this);

@@ -124,6 +124,17 @@ QPushButton#dangerButton { background-color: transparent; color: %DANGER; border
 QPushButton#dangerButton:hover { background-color: %DANGER_SOFT; }
 QPushButton#iconButton { background-color: transparent; border: none; color: %TEXT; padding: 6px 10px; }
 QPushButton#iconButton:hover { background-color: %SURFACE_ALT; }
+/* 顶栏工具按钮：圆角矩形 */
+QPushButton#toolButton {
+    background-color: %SURFACE_ALT;
+    border: 1px solid %BORDER;
+    border-radius: 14px;
+    padding: 6px 16px;
+    color: %TEXT2;
+    font-size: 13px;
+}
+QPushButton#toolButton:hover { background-color: %PRIMARY_SOFT; border-color: %PRIMARY; color: %PRIMARY; }
+QPushButton#toolButton:pressed { background-color: %PRIMARY; color: %SURFACE; }
 QPushButton#navButton { background-color: transparent; border: none; color: %TEXT2; padding: 6px 14px; }
 QPushButton#navButton:hover { color: %TEXT; }
 QPushButton#navButton:checked { color: %PRIMARY; font-weight: 700; border-bottom: 2px solid %PRIMARY; border-radius: 0; }
@@ -156,16 +167,29 @@ QComboBox QAbstractItemView {
     selection-background-color: %PRIMARY_SOFT; selection-color: %PRIMARY;
 }
 
-/* 时间选择器（QDateTimeEdit 日历下拉按钮）同样处理 */
-QDateTimeEdit::drop-down {
+/* 时间选择器（QDateTimeEdit）下拉三角：与 QComboBox 同理。
+   用 down-button 定位 + down-arrow 画线条 chevron；隐藏 up-button（datetime 无需上下微调）。 */
+QDateTimeEdit::up-button {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 0;
+    height: 0;
+    border: none;
+    background: transparent;
+}
+QDateTimeEdit::down-button {
     subcontrol-origin: padding;
     subcontrol-position: top right;
     width: 26px;
     border: none;
     background: transparent;
 }
-QDateTimeEdit::down-button { image: url(%ARROW_URL); width: 16px; height: 16px; border: none; }
-QDateTimeEdit::down-button:on { image: url(%ARROW_URL); }
+QDateTimeEdit::down-arrow {
+    image: url(%ARROW_URL);
+    width: 16px;
+    height: 16px;
+}
+QDateTimeEdit::down-arrow:on { image: url(%ARROW_URL); }
 
 /* 列表 */
 QListView { background-color: transparent; border: none; }

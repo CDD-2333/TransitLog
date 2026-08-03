@@ -1,10 +1,11 @@
 name: build
 
 # 自检：每次 push / PR 自动编译，并跑数据层与 GUI 冒烟测试。
-# 与本地工具链对齐：Qt 6.11.0（Windows 为 MinGW 64 位，见 D:/Qt/qt/6.11.0/mingw_64）。
-#   - Ubuntu:  GCC 编译 + 测试（≈ MinGW 行为）
+# 工具链对齐本地：Qt 6.11.0（Windows 用 MinGW 64 位，见 D:/Qt/qt/6.11.0/mingw_64）。
+#   - Ubuntu: GCC 编译 + 冒烟测试（≈ MinGW 行为）
 #   - Windows: MinGW 编译（镜像本地 Qt Creator 工具链）
-#   - MSVC:    额外交叉检查（验证 /utf-8 等 MSVC 特有行为）
+# 说明：install-qt-action 在 Windows runner 上装 Qt 曾有下载/解压失败，
+#   故 Windows 任务使用短安装路径 C:\Qt 且关闭缓存。
 
 on:
   push:
@@ -49,23 +50,9 @@ jobs:
         with:
           version: '6.11.0'
           arch: 'win64_mingw'
-          cache: true
+          dir: 'C:\Qt'
+          aqtversion: '==3.3.*'
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-      - name: Build
-        run: cmake --build build
-
-  build-windows-msvc:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Qt (MSVC 6.11.0)
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.11.0'
-          arch: 'win64_msvc2022_64'
-          cache: true
-      - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH='C:\Qt\6.11.0\mingw_64'
       - name: Build
         run: cmake --build build

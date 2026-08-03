@@ -35,7 +35,7 @@ cmake --build build
 也可用 `CMakeLists.txt` 构建（CI 走 CMake）。两种构建系统并存、源码相同。
 
 每次 push 由 GitHub Actions 自动编译并跑冒烟测试（`.github/workflows/build.yml`）：
-Ubuntu(GCC) + Windows(MinGW，镜像本地工具链) + Windows(MSVC 交叉检查)，版本均为 Qt 6.11.0。
+Ubuntu(GCC) + Windows(MinGW，镜像本地工具链)，版本均为 Qt 6.11.0。
 
 ## 测试
 

@@ -24,12 +24,6 @@
 #include "ui/tripcarddelegate.h"
 #include "ui/tripeditdialog.h"
 
-namespace {
-// Tabler 图标字形（替代 emoji）
-constexpr QChar kGlyphSun(0xEB30);
-constexpr QChar kGlyphMoon(0xEAF8);
-constexpr QChar kGlyphSettings(0xEB20);
-} // namespace
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -79,21 +73,20 @@ void MainWindow::setupUI()
     topLayout->addWidget(m_navStats);
     topLayout->addStretch();
 
-    const auto themeLabel = [](Theme t) {
-        return (t == Theme::Dark)
-            ? QString(kGlyphSun) + QStringLiteral(" 浅色")
-            : QString(kGlyphMoon) + QStringLiteral(" 深色");
-    };
-    auto* themeBtn = new QPushButton(themeLabel(ThemeManager::instance().currentTheme()), topBar);
-    themeBtn->setObjectName(QStringLiteral("iconButton"));
-    topLayout->addWidget(themeBtn);
-
+    // 顶栏右侧：用户名 -> 深浅色切换 -> 设置（后两项为圆角矩形按钮）
     m_userLabel = new QLabel(Session::instance().currentUser().username, topBar);
     m_userLabel->setObjectName(QStringLiteral("hintLabel"));
     topLayout->addWidget(m_userLabel);
 
-    auto* settingsBtn = new QPushButton(QString(kGlyphSettings) + QStringLiteral(" 设置"), topBar);
-    settingsBtn->setObjectName(QStringLiteral("iconButton"));
+    const auto themeLabel = [](Theme t) {
+        return (t == Theme::Dark) ? QStringLiteral("浅色") : QStringLiteral("深色");
+    };
+    auto* themeBtn = new QPushButton(themeLabel(ThemeManager::instance().currentTheme()), topBar);
+    themeBtn->setObjectName(QStringLiteral("toolButton"));
+    topLayout->addWidget(themeBtn);
+
+    auto* settingsBtn = new QPushButton(QStringLiteral("设置"), topBar);
+    settingsBtn->setObjectName(QStringLiteral("toolButton"));
     topLayout->addWidget(settingsBtn);
 
     root->addWidget(topBar);
@@ -113,7 +106,7 @@ void MainWindow::setupUI()
     pageTitle->setObjectName(QStringLiteral("pageTitle"));
     m_tripCountLabel = new QLabel(tripPage);
     m_tripCountLabel->setObjectName(QStringLiteral("hintLabel"));
-    auto* addBtn = new QPushButton(QStringLiteral("＋ 记行程"), tripPage);
+    auto* addBtn = new QPushButton(QStringLiteral("记行程"), tripPage);
     addBtn->setObjectName(QStringLiteral("primaryButton"));
     header->addWidget(pageTitle);
     header->addWidget(m_tripCountLabel);
@@ -163,9 +156,8 @@ void MainWindow::setupUI()
     connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this,
             [this, themeBtn](Theme t) {
                 qApp->setStyleSheet(ThemeManager::instance().buildQSS(t));
-                themeBtn->setText((t == Theme::Dark)
-                                      ? QString(kGlyphSun) + QStringLiteral(" 浅色")
-                                      : QString(kGlyphMoon) + QStringLiteral(" 深色"));
+                themeBtn->setText((t == Theme::Dark) ? QStringLiteral("浅色")
+                                                     : QStringLiteral("深色"));
                 m_tripList->viewport()->update();
             });
 }

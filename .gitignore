@@ -36,3 +36,5 @@ secrets/
 # ===== OS =====
 Thumbs.db
 .DS_Store
+# aqtinstall 日志
+*.log

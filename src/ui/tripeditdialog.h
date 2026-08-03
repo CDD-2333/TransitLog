@@ -49,6 +49,7 @@ private:
     QComboBox* m_tagCombo = nullptr;
     QLineEdit* m_vehicleNo = nullptr;      // 车次/航班号（可空）
     QLineEdit* m_vehicleModel = nullptr;   // 车型（可空）
+    QLineEdit* m_vehicleCar = nullptr;     // 车号（可空）
     QLineEdit* m_note = nullptr;
     QLabel* m_errorLabel = nullptr;
 };

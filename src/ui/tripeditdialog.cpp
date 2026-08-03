@@ -60,6 +60,7 @@ TripEditDialog::TripEditDialog(const QList<TransportMode>& modes, const QList<Tr
             m_tagCombo->setCurrentIndex(tagIdx);
         m_vehicleNo->setText(m_existing.vehicleNo);
         m_vehicleModel->setText(m_existing.vehicleModel);
+        m_vehicleCar->setText(m_existing.vehicleCar);
         m_note->setText(m_existing.note);
     }
 }
@@ -169,8 +170,10 @@ void TripEditDialog::buildUI()
     form2->setLabelAlignment(Qt::AlignRight);
     m_vehicleNo = new QLineEdit(page2);
     m_vehicleModel = new QLineEdit(page2);
+    m_vehicleCar = new QLineEdit(page2);
     form2->addRow(QStringLiteral("车次"), m_vehicleNo);
     form2->addRow(QStringLiteral("车型"), m_vehicleModel);
+    form2->addRow(QStringLiteral("车号"), m_vehicleCar);
     v2->addLayout(form2);
     v2->addStretch();
 
@@ -259,6 +262,7 @@ void TripEditDialog::onSave()
     m_result.tagId = m_tagCombo->currentData().toString();
     m_result.vehicleNo = m_vehicleNo->text().trimmed();
     m_result.vehicleModel = m_vehicleModel->text().trimmed();
+    m_result.vehicleCar = m_vehicleCar->text().trimmed();
     m_result.note = m_note->text().trimmed();
     m_result.createdAt = m_existing.createdAt;
 

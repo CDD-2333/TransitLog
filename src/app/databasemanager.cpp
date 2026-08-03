@@ -166,6 +166,19 @@ bool DatabaseManager::migrate()
             return false;
         }
     }
+
+    // v3：车号（如列车车厢号/车牌号）
+    if (version < 3) {
+        QSqlQuery alter(m_db);
+        if (!alter.exec(QStringLiteral("ALTER TABLE trip_record ADD COLUMN vehicle_car TEXT"))) {
+            m_lastError = alter.lastError().text();
+            return false;
+        }
+        if (!q.exec(QStringLiteral("PRAGMA user_version = 3"))) {
+            m_lastError = q.lastError().text();
+            return false;
+        }
+    }
     return true;
 }
 

@@ -72,6 +72,7 @@ int main(int argc, char* argv[])
     t1.tagId = QStringLiteral("COMMUTE");
     t1.vehicleNo = QStringLiteral("302路");
     t1.vehicleModel = QStringLiteral("CR400AF");
+    t1.vehicleCar = QStringLiteral("5号车");
     t1.note = QStringLiteral("早高峰");
     CHECK(repo.saveTrip(t1), "保存行程(完整)");
 
@@ -102,12 +103,13 @@ int main(int argc, char* argv[])
     }
     CHECK(hasInProgress, "进行中行程正确返回(空 end_time)");
 
-    // 车次/车型字段往返
+    // 车次/车型/车号字段往返
     bool vehOk = false;
     for (const Trip& t : all)
-        if (t.vehicleNo == QStringLiteral("302路") && t.vehicleModel == QStringLiteral("CR400AF"))
+        if (t.vehicleNo == QStringLiteral("302路") && t.vehicleModel == QStringLiteral("CR400AF")
+            && t.vehicleCar == QStringLiteral("5号车"))
             vehOk = true;
-    CHECK(vehOk, "车次/车型字段往返保存");
+    CHECK(vehOk, "车次/车型/车号字段往返保存");
 
     // 图鉴分组统计（车次）
     bool numFound = false;

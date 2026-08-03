@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS trip_record (
     tag_id        TEXT REFERENCES trip_tag(code),  -- 可空：P0 单标签
     vehicle_no    TEXT,                         -- v2 新增：车次/航班号（302路、K262次、CA1234），可空
     vehicle_model TEXT,                         -- v2 新增：车型（CR400AF、DF4D），可空
+    vehicle_car   TEXT,                         -- v3 新增：车号（车厢号/车牌号），可空
     note          TEXT NOT NULL DEFAULT '',
     is_deleted    INTEGER NOT NULL DEFAULT 0,   -- 软删除
     created_at    INTEGER NOT NULL,

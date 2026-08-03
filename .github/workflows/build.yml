@@ -1,0 +1,44 @@
+name: build
+
+# 自检：每次 push / PR 自动编译，并跑数据层与 GUI 冒烟测试。
+# 编译在 Windows(MSVC) 与 Ubuntu 双平台；测试在 Ubuntu（offscreen 渲染）执行。
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.2'
+          arch: 'linux_gcc_64'
+          cache: true
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build -j2
+      - name: Data smoke test
+        run: QT_QPA_PLATFORM=offscreen ./build/TransitLogDataSmoke
+      - name: GUI smoke test
+        run: QT_QPA_PLATFORM=offscreen ./build/TransitLogGuiSmoke
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.7.2'
+          arch: 'win64_msvc2022_64'
+          cache: true
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build

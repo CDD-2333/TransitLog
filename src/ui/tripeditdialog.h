@@ -42,6 +42,8 @@ private:
     QLineEdit* m_distance = nullptr;
     QLineEdit* m_cost = nullptr;
     QComboBox* m_tagCombo = nullptr;
+    QLineEdit* m_vehicleNo = nullptr;      // 车次/航班号（可空）
+    QLineEdit* m_vehicleModel = nullptr;   // 车型（可空）
     QLineEdit* m_note = nullptr;
     QLabel* m_errorLabel = nullptr;
 };

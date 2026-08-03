@@ -1,7 +1,7 @@
 # TransitLog — qmake 构建配置（与 MemoRise 的 .pro 工作流一致）
 # 也可用 CMakeLists.txt（CI 用）。二选一，均可直接构建。
 
-QT += core gui widgets sql
+QT += core gui widgets sql charts
 
 CONFIG += c++17
 
@@ -21,17 +21,20 @@ SOURCES += \
     src/app/pbkdf2.cpp \
     src/app/session.cpp \
     src/app/thememanager.cpp \
+    src/model/statsservice.cpp \
     src/model/triplistmodel.cpp \
     src/repo/triprepository.cpp \
     src/repo/userrepository.cpp \
     src/ui/appdatetimeedit.cpp \
-    src/ui/chartwidget.cpp \
     src/ui/logindialog.cpp \
     src/ui/mainwindow.cpp \
+    src/ui/qflowlayout.cpp \
     src/ui/settingsdialog.cpp \
     src/ui/statswidget.cpp \
+    src/ui/trendchartwidget.cpp \
     src/ui/tripcarddelegate.cpp \
-    src/ui/tripeditdialog.cpp
+    src/ui/tripeditdialog.cpp \
+    src/ui/vehiclecatalogwidget.cpp
 
 HEADERS += \
     src/app/authcontroller.h \
@@ -41,17 +44,20 @@ HEADERS += \
     src/app/thememanager.h \
     src/model/entities.h \
     src/model/format.h \
+    src/model/statsservice.h \
     src/model/triplistmodel.h \
     src/repo/triprepository.h \
     src/repo/userrepository.h \
     src/ui/appdatetimeedit.h \
-    src/ui/chartwidget.h \
     src/ui/logindialog.h \
     src/ui/mainwindow.h \
+    src/ui/qflowlayout.h \
     src/ui/settingsdialog.h \
     src/ui/statswidget.h \
+    src/ui/trendchartwidget.h \
     src/ui/tripcarddelegate.h \
-    src/ui/tripeditdialog.h
+    src/ui/tripeditdialog.h \
+    src/ui/vehiclecatalogwidget.h
 
 # 资源：Tabler 图标字体 + 下拉箭头 PNG + 应用图标
 RESOURCES += resources.qrc

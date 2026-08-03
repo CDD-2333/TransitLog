@@ -48,6 +48,8 @@ struct Trip {
     std::optional<qint64> distanceM;     // 米
     std::optional<qint64> costFen;       // 分
     QString tagId;                       // 空串 => 无标签
+    QString vehicleNo;                   // 车次/航班号：302路、K262次、CA1234（空串=未填）
+    QString vehicleModel;                // 车型：CR400AF、DF4D（空串=未填）
     QString note;
 
     bool isDeleted = false;

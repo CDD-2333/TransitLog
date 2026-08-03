@@ -70,6 +70,8 @@ int main(int argc, char* argv[])
     t1.distanceM = 3200;
     t1.costFen = 400;
     t1.tagId = QStringLiteral("COMMUTE");
+    t1.vehicleNo = QStringLiteral("302路");
+    t1.vehicleModel = QStringLiteral("CR400AF");
     t1.note = QStringLiteral("早高峰");
     CHECK(repo.saveTrip(t1), "保存行程(完整)");
 
@@ -99,6 +101,20 @@ int main(int argc, char* argv[])
             CHECK(false, "行程 id 非空");
     }
     CHECK(hasInProgress, "进行中行程正确返回(空 end_time)");
+
+    // 车次/车型字段往返
+    bool vehOk = false;
+    for (const Trip& t : all)
+        if (t.vehicleNo == QStringLiteral("302路") && t.vehicleModel == QStringLiteral("CR400AF"))
+            vehOk = true;
+    CHECK(vehOk, "车次/车型字段往返保存");
+
+    // 图鉴分组统计（车次）
+    bool numFound = false;
+    for (const auto& vs : repo.vehicleStats(uid, TripRepository::VehicleDim::Number))
+        if (vs.name == QStringLiteral("302路") && vs.count == 1 && vs.firstDate.isValid())
+            numFound = true;
+    CHECK(numFound, "车次图鉴分组统计(302路/1次)");
 
     // 10. 编辑
     Trip edit = all.first();

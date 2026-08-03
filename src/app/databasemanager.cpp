@@ -144,6 +144,28 @@ bool DatabaseManager::migrate()
             return false;
         }
     }
+
+    // v2：车次（302路/K262次/航班号）与车型（CR400AF/DF4D）两个可空字段
+    if (version < 2) {
+        const QStringList stmts = {
+            QStringLiteral("ALTER TABLE trip_record ADD COLUMN vehicle_no TEXT"),
+            QStringLiteral("ALTER TABLE trip_record ADD COLUMN vehicle_model TEXT"),
+            QStringLiteral(
+                "CREATE INDEX IF NOT EXISTS idx_trip_user_vehicle_no ON trip_record(user_id, vehicle_no)"),
+            QStringLiteral(
+                "CREATE INDEX IF NOT EXISTS idx_trip_user_vehicle_mdl ON trip_record(user_id, vehicle_model)"),
+        };
+        for (const QString& sql : stmts) {
+            if (!q.exec(sql)) {
+                m_lastError = q.lastError().text();
+                return false;
+            }
+        }
+        if (!q.exec(QStringLiteral("PRAGMA user_version = 2"))) {
+            m_lastError = q.lastError().text();
+            return false;
+        }
+    }
     return true;
 }
 

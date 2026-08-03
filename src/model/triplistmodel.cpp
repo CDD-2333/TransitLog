@@ -60,6 +60,8 @@ QVariant TripListModel::data(const QModelIndex& index, int role) const
     }
     case MetaTextRole: {
         QStringList parts;
+        if (!t.vehicleNo.isEmpty())
+            parts << t.vehicleNo;
         if (t.distanceM)
             parts << Format::km(*t.distanceM);
         if (t.costFen)

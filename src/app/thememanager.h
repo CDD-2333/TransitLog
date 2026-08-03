@@ -16,6 +16,7 @@ public:
         QString text, textSecondary;
         QString danger, dangerSoft;
         QString success, focus;
+        QString accentGold;   // 图表/强调用的金色 accent（P1 统计用）
     };
 
     static ThemeManager& instance();

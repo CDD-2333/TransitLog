@@ -21,10 +21,20 @@ public:
         int count = 0;
         qint64 distanceM = 0;
     };
+    enum class VehicleDim { Number, Model };   // 车次 / 车型
+    struct VehicleStat {
+        QString name;        // 车次或车型名
+        int count = 0;
+        QDateTime firstDate; // 首次乘坐
+        QDateTime lastDate;  // 最近乘坐
+    };
 
     QList<Trip> tripsForUser(const QString& userId) const;
     QList<TransportMode> transportModes() const;
     QList<TripTag> tripTags() const;
+
+    // 图鉴：按车次(302路)或车型(CR400AF)去重分组统计
+    QList<VehicleStat> vehicleStats(const QString& userId, VehicleDim dim) const;
 
     bool saveTrip(Trip& trip);                  // 新建或更新（按 id 判断）
     bool softDeleteTrip(const QString& id);

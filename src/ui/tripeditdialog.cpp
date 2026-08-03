@@ -57,6 +57,8 @@ TripEditDialog::TripEditDialog(const QList<TransportMode>& modes, const QList<Tr
         const int tagIdx = m_tagCombo->findData(m_existing.tagId);
         if (tagIdx >= 0)
             m_tagCombo->setCurrentIndex(tagIdx);
+        m_vehicleNo->setText(m_existing.vehicleNo);
+        m_vehicleModel->setText(m_existing.vehicleModel);
         m_note->setText(m_existing.note);
     }
 }
@@ -116,6 +118,14 @@ void TripEditDialog::buildUI()
         m_tagCombo->addItem(t.name, t.code);
     form->addRow(QStringLiteral("标签"), m_tagCombo);
 
+    // 车次 / 车型（均可空）
+    m_vehicleNo = new QLineEdit(this);
+    m_vehicleNo->setPlaceholderText(QStringLiteral("如：302路 / K262次 / CA1234"));
+    m_vehicleModel = new QLineEdit(this);
+    m_vehicleModel->setPlaceholderText(QStringLiteral("如：CR400AF / DF4D"));
+    form->addRow(QStringLiteral("车次"), m_vehicleNo);
+    form->addRow(QStringLiteral("车型"), m_vehicleModel);
+
     // 备注
     m_note = new QLineEdit(this);
     m_note->setPlaceholderText(QStringLiteral("可选"));
@@ -156,6 +166,8 @@ bool TripEditDialog::validate(QString& error) const
                        || !m_endPlace->text().trimmed().isEmpty();
     const bool hasOther = !m_distance->text().trimmed().isEmpty()
                        || !m_cost->text().trimmed().isEmpty()
+                       || !m_vehicleNo->text().trimmed().isEmpty()
+                       || !m_vehicleModel->text().trimmed().isEmpty()
                        || !m_note->text().trimmed().isEmpty()
                        || !m_tagCombo->currentData().toString().isEmpty();
     if (!hasPlace && !hasOther) {
@@ -206,6 +218,8 @@ void TripEditDialog::onSave()
     }
 
     m_result.tagId = m_tagCombo->currentData().toString();
+    m_result.vehicleNo = m_vehicleNo->text().trimmed();
+    m_result.vehicleModel = m_vehicleModel->text().trimmed();
     m_result.note = m_note->text().trimmed();
     m_result.createdAt = m_existing.createdAt;
 

@@ -23,6 +23,7 @@
 #include "ui/statswidget.h"
 #include "ui/tripcarddelegate.h"
 #include "ui/tripeditdialog.h"
+#include "ui/vehiclecatalogwidget.h"
 
 
 MainWindow::MainWindow(QWidget* parent)
@@ -69,8 +70,12 @@ void MainWindow::setupUI()
     m_navStats = new QPushButton(QStringLiteral("统计"), topBar);
     m_navStats->setObjectName(QStringLiteral("navButton"));
     m_navStats->setCheckable(true);
+    m_navCatalog = new QPushButton(QStringLiteral("图鉴"), topBar);
+    m_navCatalog->setObjectName(QStringLiteral("navButton"));
+    m_navCatalog->setCheckable(true);
     topLayout->addWidget(m_navTrips);
     topLayout->addWidget(m_navStats);
+    topLayout->addWidget(m_navCatalog);
     topLayout->addStretch();
 
     // 顶栏右侧：用户名 -> 深浅色切换 -> 设置（后两项为圆角矩形按钮）
@@ -139,9 +144,14 @@ void MainWindow::setupUI()
     m_statsWidget = new StatsWidget(m_pages);
     m_pages->addWidget(m_statsWidget);
 
+    // 图鉴页
+    m_catalogWidget = new VehicleCatalogWidget(m_pages);
+    m_pages->addWidget(m_catalogWidget);
+
     // ---- 连接 ----
     connect(m_navTrips, &QPushButton::clicked, this, &MainWindow::onShowTrips);
     connect(m_navStats, &QPushButton::clicked, this, &MainWindow::onShowStats);
+    connect(m_navCatalog, &QPushButton::clicked, this, &MainWindow::onShowCatalog);
     connect(addBtn, &QPushButton::clicked, this, &MainWindow::onAddTrip);
     connect(themeBtn, &QPushButton::clicked, this, &MainWindow::onToggleTheme);
     connect(settingsBtn, &QPushButton::clicked, this, &MainWindow::onOpenSettings);
@@ -167,6 +177,7 @@ void MainWindow::onShowTrips()
     m_pages->setCurrentIndex(0);
     m_navTrips->setChecked(true);
     m_navStats->setChecked(false);
+    m_navCatalog->setChecked(false);
 }
 
 void MainWindow::onShowStats()
@@ -174,6 +185,15 @@ void MainWindow::onShowStats()
     m_pages->setCurrentIndex(1);
     m_navStats->setChecked(true);
     m_navTrips->setChecked(false);
+    m_navCatalog->setChecked(false);
+}
+
+void MainWindow::onShowCatalog()
+{
+    m_pages->setCurrentIndex(2);
+    m_navCatalog->setChecked(true);
+    m_navTrips->setChecked(false);
+    m_navStats->setChecked(false);
 }
 
 void MainWindow::reloadTrips()
@@ -196,6 +216,11 @@ void MainWindow::reloadTrips()
     m_tripModel->setTrips(trips);
     m_statsWidget->setModes(modeMap);
     m_statsWidget->setTrips(trips);
+
+    // 图鉴：按车次 / 车型分组刷新
+    m_catalogWidget->refresh(
+        m_tripRepo->vehicleStats(uid, TripRepository::VehicleDim::Number),
+        m_tripRepo->vehicleStats(uid, TripRepository::VehicleDim::Model));
 
     m_tripCountLabel->setText(QStringLiteral("共 %1 段").arg(trips.size()));
     m_emptyStack->setCurrentIndex(trips.isEmpty() ? 0 : 1);

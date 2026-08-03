@@ -55,6 +55,8 @@ int main(int argc, char* argv[])
         t.distanceM = 3200;
         t.costFen = 400;
         t.tagId = QStringLiteral("COMMUTE");
+        t.vehicleNo = QStringLiteral("302路");
+        t.vehicleModel = QStringLiteral("CR400AF");
         t.note = QStringLiteral("早高峰人少");
         if (!repo.saveTrip(t))
             qCritical() << "save t1 failed";
@@ -197,13 +199,14 @@ int main(int argc, char* argv[])
         QDir().mkpath(shotDir);
 
     // 异步渲染后抓图验证（分步延时，确保各控件完成绘制）
-    auto navStats = [&]() -> QPushButton* {
+    auto findNav = [&](const QString& text) -> QPushButton* {
         const auto btns = w.findChildren<QPushButton*>();
         for (QPushButton* b : btns)
-            if (b->text().contains(QStringLiteral("统计")))
+            if (b->text().contains(text))
                 return b;
         return nullptr;
     };
+    auto navStats = [&]() { return findNav(QStringLiteral("统计")); };
     auto saveShot = [&](const QString& name, QWidget* target) {
         const QPixmap pm = target->grab();
         if (pm.isNull() || pm.width() == 0) {
@@ -231,10 +234,22 @@ int main(int argc, char* argv[])
     });
     QTimer::singleShot(560, [&]() {
         saveShot(QStringLiteral("stats-light.png"), &w);
-        ThemeManager::instance().setTheme(Theme::Dark);
+        if (QPushButton* b = findNav(QStringLiteral("图鉴")))
+            b->click();
     });
-    QTimer::singleShot(740, [&]() {
+    QTimer::singleShot(640, [&]() {
+        saveShot(QStringLiteral("catalog-light.png"), &w);
+        ThemeManager::instance().setTheme(Theme::Dark);
+        if (QPushButton* b = findNav(QStringLiteral("行程")))
+            b->click();
+    });
+    QTimer::singleShot(760, [&]() {
         saveShot(QStringLiteral("trip-dark.png"), &w);
+        if (QPushButton* b = findNav(QStringLiteral("图鉴")))
+            b->click();
+    });
+    QTimer::singleShot(840, [&]() {
+        saveShot(QStringLiteral("catalog-dark.png"), &w);
         // 深色主题下再打开编辑对话框（含 起点/终点/开始时间/结束时间 四个输入框）
         dlg = new TripEditDialog(repo.transportModes(), repo.tripTags(), Trip());
         dlg->resize(460, 560);

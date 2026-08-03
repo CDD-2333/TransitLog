@@ -11,6 +11,7 @@ class QPushButton;
 class QStackedWidget;
 class StatsWidget;
 class TripRepository;
+class VehicleCatalogWidget;
 
 // 主窗口：只做编排（Model/View 绑定、对话框调度），所有 SQL 在 Repository 层。
 class MainWindow : public QMainWindow {
@@ -22,6 +23,7 @@ public:
 private slots:
     void onShowTrips();
     void onShowStats();
+    void onShowCatalog();
     void onAddTrip();
     void onEditTrip(const QModelIndex& index);
     void onDeleteTrip(const QModelIndex& index);
@@ -44,5 +46,7 @@ private:
     QLabel* m_userLabel = nullptr;
     QPushButton* m_navTrips = nullptr;
     QPushButton* m_navStats = nullptr;
+    QPushButton* m_navCatalog = nullptr;
     StatsWidget* m_statsWidget = nullptr;
+    VehicleCatalogWidget* m_catalogWidget = nullptr;
 };

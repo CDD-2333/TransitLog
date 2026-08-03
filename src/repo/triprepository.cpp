@@ -43,8 +43,8 @@ QList<Trip> TripRepository::tripsForUser(const QString& userId) const
     QSqlQuery q(DatabaseManager::instance().db());
     q.prepare(QStringLiteral(
         "SELECT id, user_id, mode_code, start_time, end_time, start_place, end_place,"
-        " start_lat, start_lng, end_lat, end_lng, distance_m, cost_fen, tag_id, note,"
-        " created_at, updated_at"
+        " start_lat, start_lng, end_lat, end_lng, distance_m, cost_fen, tag_id,"
+        " vehicle_no, vehicle_model, note, created_at, updated_at"
         " FROM trip_record WHERE user_id = ? AND is_deleted = 0 ORDER BY start_time DESC"));
     q.addBindValue(userId);
     if (!q.exec())
@@ -73,9 +73,11 @@ QList<Trip> TripRepository::tripsForUser(const QString& userId) const
         if (!q.value(12).isNull())
             t.costFen = q.value(12).toLongLong();
         t.tagId = q.value(13).toString();
-        t.note = q.value(14).toString();
-        t.createdAt = QDateTime::fromMSecsSinceEpoch(q.value(15).toLongLong(), Qt::UTC);
-        t.updatedAt = QDateTime::fromMSecsSinceEpoch(q.value(16).toLongLong(), Qt::UTC);
+        t.vehicleNo = q.value(14).toString();
+        t.vehicleModel = q.value(15).toString();
+        t.note = q.value(16).toString();
+        t.createdAt = QDateTime::fromMSecsSinceEpoch(q.value(17).toLongLong(), Qt::UTC);
+        t.updatedAt = QDateTime::fromMSecsSinceEpoch(q.value(18).toLongLong(), Qt::UTC);
         out.append(t);
     }
     return out;
@@ -153,8 +155,8 @@ bool TripRepository::saveTrip(Trip& trip)
         q.prepare(QStringLiteral(
             "UPDATE trip_record SET mode_code=?, start_time=?, end_time=?,"
             " start_place=?, end_place=?, start_lat=?, start_lng=?, end_lat=?, end_lng=?,"
-            " distance_m=?, cost_fen=?, tag_id=?, note=?, is_deleted=0, updated_at=?"
-            " WHERE id=?"));
+            " distance_m=?, cost_fen=?, tag_id=?, vehicle_no=?, vehicle_model=?,"
+            " note=?, is_deleted=0, updated_at=? WHERE id=?"));
         q.addBindValue(trip.modeCode);
         q.addBindValue(trip.startTime.toMSecsSinceEpoch());
         bindEndTime(q);
@@ -167,6 +169,8 @@ bool TripRepository::saveTrip(Trip& trip)
         bindOpt(q, trip.distanceM);
         bindOpt(q, trip.costFen);
         q.addBindValue(trip.tagId.isEmpty() ? QVariant() : QVariant(trip.tagId));
+        bindText(q, trip.vehicleNo);
+        bindText(q, trip.vehicleModel);
         bindText(q, trip.note);
         q.addBindValue(trip.updatedAt.toMSecsSinceEpoch());
         q.addBindValue(trip.id);
@@ -177,8 +181,9 @@ bool TripRepository::saveTrip(Trip& trip)
     q.prepare(QStringLiteral(
         "INSERT INTO trip_record (id, user_id, mode_code, start_time, end_time,"
         " start_place, end_place, start_lat, start_lng, end_lat, end_lng,"
-        " distance_m, cost_fen, tag_id, note, is_deleted, created_at, updated_at)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)"));
+        " distance_m, cost_fen, tag_id, vehicle_no, vehicle_model,"
+        " note, is_deleted, created_at, updated_at)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)"));
     q.addBindValue(trip.id);
     q.addBindValue(trip.userId);
     q.addBindValue(trip.modeCode);
@@ -193,10 +198,39 @@ bool TripRepository::saveTrip(Trip& trip)
     bindOpt(q, trip.distanceM);
     bindOpt(q, trip.costFen);
     q.addBindValue(trip.tagId.isEmpty() ? QVariant() : QVariant(trip.tagId));
+    bindText(q, trip.vehicleNo);
+    bindText(q, trip.vehicleModel);
     bindText(q, trip.note);
     q.addBindValue(trip.createdAt.toMSecsSinceEpoch());
     q.addBindValue(trip.updatedAt.toMSecsSinceEpoch());
     return q.exec();
+}
+
+QList<TripRepository::VehicleStat> TripRepository::vehicleStats(const QString& userId,
+                                                                VehicleDim dim) const
+{
+    QList<VehicleStat> out;
+    // 列名来自枚举白名单，杜绝注入
+    const QString col = (dim == VehicleDim::Number) ? QStringLiteral("vehicle_no")
+                                                    : QStringLiteral("vehicle_model");
+    QSqlQuery q(DatabaseManager::instance().db());
+    q.prepare(QStringLiteral(
+        "SELECT %1, COUNT(*), MIN(start_time), MAX(start_time)"
+        " FROM trip_record"
+        " WHERE user_id = ? AND is_deleted = 0 AND %1 IS NOT NULL AND %1 != ''"
+        " GROUP BY %1 ORDER BY COUNT(*) DESC").arg(col));
+    q.addBindValue(userId);
+    if (!q.exec())
+        return out;
+    while (q.next()) {
+        VehicleStat s;
+        s.name = q.value(0).toString();
+        s.count = q.value(1).toInt();
+        s.firstDate = QDateTime::fromMSecsSinceEpoch(q.value(2).toLongLong(), Qt::UTC);
+        s.lastDate = QDateTime::fromMSecsSinceEpoch(q.value(3).toLongLong(), Qt::UTC);
+        out.append(s);
+    }
+    return out;
 }
 
 bool TripRepository::softDeleteTrip(const QString& id)

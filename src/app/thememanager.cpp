@@ -21,6 +21,7 @@ ThemeManager::Palette lightPalette()
         QStringLiteral("#FDE8E8"), // dangerSoft
         QStringLiteral("#4A7C59"), // success
         QStringLiteral("#B0CCC0"), // focus
+        QStringLiteral("#C99A2E"), // accentGold
     };
 }
 
@@ -41,6 +42,7 @@ ThemeManager::Palette darkPalette()
         QStringLiteral("#3A2B2B"), // dangerSoft
         QStringLiteral("#6FA98F"), // success
         QStringLiteral("#5A7D6E"), // focus
+        QStringLiteral("#E3B341"), // accentGold
     };
 }
 

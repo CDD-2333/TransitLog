@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql Charts)
 
 option(BUILD_TESTS "构建冒烟测试" OFF)
 
@@ -24,6 +24,8 @@ set(TRANSITLOG_SOURCES
     src/app/thememanager.h
     src/model/entities.h
     src/model/format.h
+    src/model/statsservice.cpp
+    src/model/statsservice.h
     src/model/triplistmodel.cpp
     src/model/triplistmodel.h
     src/repo/triprepository.cpp
@@ -32,26 +34,30 @@ set(TRANSITLOG_SOURCES
     src/repo/userrepository.h
     src/ui/appdatetimeedit.cpp
     src/ui/appdatetimeedit.h
-    src/ui/chartwidget.cpp
-    src/ui/chartwidget.h
     src/ui/logindialog.cpp
     src/ui/logindialog.h
     src/ui/mainwindow.cpp
     src/ui/mainwindow.h
+    src/ui/qflowlayout.cpp
+    src/ui/qflowlayout.h
     src/ui/settingsdialog.cpp
     src/ui/settingsdialog.h
     src/ui/statswidget.cpp
     src/ui/statswidget.h
+    src/ui/trendchartwidget.cpp
+    src/ui/trendchartwidget.h
     src/ui/tripcarddelegate.cpp
     src/ui/tripcarddelegate.h
     src/ui/tripeditdialog.cpp
     src/ui/tripeditdialog.h
+    src/ui/vehiclecatalogwidget.cpp
+    src/ui/vehiclecatalogwidget.h
 )
 
 # 核心库（不含 main），供主程序与测试共同链接；Qt 依赖 PUBLIC 传播
 qt_add_library(transitlog_core STATIC ${TRANSITLOG_SOURCES})
 target_include_directories(transitlog_core PUBLIC src)
-target_link_libraries(transitlog_core PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql)
+target_link_libraries(transitlog_core PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql Qt6::Charts)
 
 # 资源(.qrc)直接进可执行目标而非静态库：
 # 静态库里的 qrc 资源注册对象可能被链接器丢弃，导致资源加载失败。

@@ -1,10 +1,7 @@
 #include "statswidget.h"
 
-#include <algorithm>
-
 #include <QComboBox>
 #include <QDate>
-#include "ui/chartwidget.h"
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -12,28 +9,40 @@
 #include <QVBoxLayout>
 
 #include "model/format.h"
+#include "model/statsservice.h"
+#include "ui/trendchartwidget.h"
 
 namespace {
 
 struct Range {
     QDate from;
     QDate to;
-    QString label;
 };
 
 Range rangeFor(int index)
 {
     const QDate today = QDate::currentDate();
     switch (index) {
-    case 0: // 近7天
-        return {today.addDays(-6), today, QStringLiteral("近7天")};
-    case 1: // 近30天
-        return {today.addDays(-29), today, QStringLiteral("近30天")};
-    case 2: // 本月
-        return {QDate(today.year(), today.month(), 1), today, QStringLiteral("本月")};
-    default: // 全部
-        return {QDate(1970, 1, 1), today, QStringLiteral("全部")};
+    case 0: return {today.addDays(-6), today};                        // 近7天
+    case 1: return {today.addDays(-29), today};                       // 近30天
+    case 2: return {QDate(today.year(), today.month(), 1), today};    // 本月
+    case 3: return {QDate(today.year(), 1, 1), today};                // 今年
+    default: return {QDate(1970, 1, 1), today};                       // 全部
     }
+}
+
+QString fmtDuration(qint64 sec)
+{
+    if (sec <= 0)
+        return QStringLiteral("0m");
+    const qint64 d = sec / 86400;
+    const qint64 h = (sec % 86400) / 3600;
+    const qint64 m = (sec % 3600) / 60;
+    if (d > 0)
+        return QStringLiteral("%1天%2h").arg(d).arg(h);
+    if (h > 0)
+        return QStringLiteral("%1h%2m").arg(h).arg(m);
+    return QStringLiteral("%1m").arg(m);
 }
 
 } // namespace
@@ -50,29 +59,36 @@ void StatsWidget::buildUI()
     root->setContentsMargins(20, 16, 20, 20);
     root->setSpacing(14);
 
-    // 标题行
+    // 标题行 + 时间范围 + 交通方式筛选
     auto* header = new QHBoxLayout;
     auto* title = new QLabel(QStringLiteral("统计"), this);
     title->setObjectName(QStringLiteral("pageTitle"));
     header->addWidget(title);
     header->addStretch();
+    m_modeCombo = new QComboBox(this);
+    m_modeCombo->setMinimumWidth(130);
+    header->addWidget(m_modeCombo);
     m_rangeCombo = new QComboBox(this);
     m_rangeCombo->addItems({QStringLiteral("近7天"), QStringLiteral("近30天"),
-                            QStringLiteral("本月"), QStringLiteral("全部")});
+                            QStringLiteral("本月"), QStringLiteral("今年"), QStringLiteral("全部")});
     header->addWidget(m_rangeCombo);
     root->addLayout(header);
     connect(m_rangeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &StatsWidget::onRangeChanged);
+    connect(m_modeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &StatsWidget::onModeChanged);
 
-    // 三栏指标卡
+    // 四张核心数字卡片
     auto* cards = new QHBoxLayout;
     cards->setSpacing(14);
-    const QStringList captions = {QStringLiteral("总里程"), QStringLiteral("总费用"), QStringLiteral("行程数")};
-    QLabel* values[3];
+    const QStringList captions = {QStringLiteral("总里程"), QStringLiteral("总时长"),
+                                  QStringLiteral("总花费"), QStringLiteral("到访站点")};
+    QLabel* values[4];
     values[0] = m_totalDistance = new QLabel(QStringLiteral("--"), this);
-    values[1] = m_totalCost = new QLabel(QStringLiteral("--"), this);
-    values[2] = m_totalCount = new QLabel(QStringLiteral("--"), this);
-    for (int i = 0; i < 3; ++i) {
+    values[1] = m_totalDuration = new QLabel(QStringLiteral("--"), this);
+    values[2] = m_totalCost = new QLabel(QStringLiteral("--"), this);
+    values[3] = m_totalStations = new QLabel(QStringLiteral("--"), this);
+    for (int i = 0; i < 4; ++i) {
         auto* card = new QFrame(this);
         card->setObjectName(QStringLiteral("card"));
         auto* v = new QVBoxLayout(card);
@@ -86,15 +102,15 @@ void StatsWidget::buildUI()
     }
     root->addLayout(cards);
 
-    // 每日里程折线
+    // 月度趋势图（Qt Charts）
     auto* chartCard = new QFrame(this);
     chartCard->setObjectName(QStringLiteral("card"));
     auto* chartLayout = new QVBoxLayout(chartCard);
     chartLayout->setContentsMargins(16, 12, 16, 12);
-    auto* chartTitle = new QLabel(QStringLiteral("每日里程"), chartCard);
+    auto* chartTitle = new QLabel(QStringLiteral("月度趋势（里程/花费）"), chartCard);
     chartTitle->setObjectName(QStringLiteral("hintLabel"));
     chartLayout->addWidget(chartTitle);
-    m_chart = new ChartWidget(chartCard);
+    m_chart = new TrendChartWidget(chartCard);
     chartLayout->addWidget(m_chart);
     root->addWidget(chartCard);
 
@@ -116,20 +132,26 @@ void StatsWidget::buildUI()
 void StatsWidget::setTrips(const QList<Trip>& trips)
 {
     m_trips = trips;
-    refresh();
+    recompute();
 }
 
 void StatsWidget::setModes(const QHash<QString, TransportMode>& modes)
 {
     m_modes = modes;
+    // 填充交通方式筛选（首次调用；保留"全部"）
+    if (m_modeCombo->count() <= 1) {
+        m_modeCombo->addItem(QStringLiteral("全部交通方式"), QString());
+        for (auto it = modes.constBegin(); it != modes.constEnd(); ++it)
+            m_modeCombo->addItem(it.value().name, it.key());
+    }
 }
 
 void StatsWidget::onRangeChanged()
 {
-    refresh();
+    recompute();
 }
 
-void StatsWidget::refresh()
+void StatsWidget::onModeChanged()
 {
     recompute();
 }
@@ -148,62 +170,36 @@ void StatsWidget::clearLayout(QLayout* layout)
 void StatsWidget::recompute()
 {
     const Range range = rangeFor(m_rangeCombo->currentIndex());
+    const QString modeFilter = m_modeCombo->currentData().toString();
 
-    // 汇总
-    qint64 dist = 0;
-    qint64 cost = 0;
-    int count = 0;
-    QHash<QDate, qreal> daily;
-    QHash<QString, int> modeCount;
-    for (const Trip& t : m_trips) {
-        const QDate day = t.startTime.toLocalTime().date();
-        if (day < range.from || day > range.to)
-            continue;
-        ++count;
-        if (t.distanceM) {
-            dist += *t.distanceM;
-            daily[day] += *t.distanceM / 1000.0;
-        }
-        if (t.costFen)
-            cost += *t.costFen;
-        ++modeCount[t.modeCode];
-    }
+    const Stats::Summary sum = Stats::summarize(m_trips, range.from, range.to, modeFilter);
 
-    m_totalDistance->setText(dist > 0 ? Format::km(dist) : QStringLiteral("0 km"));
-    m_totalCost->setText(cost > 0 ? Format::yuan(cost) : QStringLiteral("¥0.00"));
-    m_totalCount->setText(QString::number(count));
+    m_totalDistance->setText(sum.distanceM > 0 ? Format::km(sum.distanceM)
+                                               : QStringLiteral("0 km"));
+    m_totalDuration->setText(fmtDuration(sum.durationSec));
+    m_totalCost->setText(sum.costFen > 0 ? Format::yuan(sum.costFen) : QStringLiteral("¥0.00"));
+    m_totalStations->setText(QString::number(sum.stationCount));
 
-    // 折线：把空日补 0，形成连续序列
-    QVector<QPointF> points;
-    points.reserve(range.from.daysTo(range.to) + 1);
-    for (QDate d = range.from; d <= range.to; d = d.addDays(1))
-        points.append(QPointF(points.size(), daily.value(d, 0.0)));
-    m_chart->setSeries(points);
+    m_chart->setMonthlyData(Stats::monthlyTrend(m_trips, range.from, range.to, modeFilter));
 
     // 交通方式占比
     clearLayout(m_modeRows);
+    const auto shares = Stats::modeShares(m_trips, range.from, range.to, modeFilter);
     int totalCount = 0;
-    for (int c : modeCount)
-        totalCount += c;
+    for (const auto& s : shares)
+        totalCount += s.count;
     if (totalCount == 0) {
         auto* empty = new QLabel(QStringLiteral("暂无数据"), this);
         empty->setObjectName(QStringLiteral("hintLabel"));
         m_modeRows->addWidget(empty);
         return;
     }
-
-    QList<QPair<QString, int>> list;
-    for (auto it = modeCount.constBegin(); it != modeCount.constEnd(); ++it)
-        list.append({it.key(), it.value()});
-    std::sort(list.begin(), list.end(),
-              [](const QPair<QString, int>& a, const QPair<QString, int>& b) { return a.second > b.second; });
-
-    for (const auto& pair : list) {
-        const int percent = qRound(100.0 * pair.second / totalCount);
+    for (const auto& s : shares) {
+        const int percent = qRound(100.0 * s.count / totalCount);
         auto* row = new QHBoxLayout;
-        const QString modeName = m_modes.value(pair.first).name.isEmpty()
-                                     ? pair.first
-                                     : m_modes.value(pair.first).name;
+        const QString modeName = m_modes.value(s.modeCode).name.isEmpty()
+                                     ? s.modeCode
+                                     : m_modes.value(s.modeCode).name;
         auto* name = new QLabel(modeName, this);
         name->setObjectName(QStringLiteral("modeNameLabel"));
         auto* bar = new QProgressBar(this);

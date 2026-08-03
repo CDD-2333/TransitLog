@@ -21,6 +21,7 @@ jobs:
         with:
           version: '6.11.0'
           arch: 'linux_gcc_64'
+          modules: 'qtcharts'   # P1 统计图表需要 Qt Charts
           cache: true
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON

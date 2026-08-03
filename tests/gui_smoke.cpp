@@ -226,6 +226,20 @@ int main(int argc, char* argv[])
     });
     QTimer::singleShot(380, [&]() {
         saveShot(QStringLiteral("edit-light.png"), dlg);
+        // 两步向导：点"下一步"进入第 2 页（车次/车型），截图验证
+        if (dlg) {
+            const auto btns = dlg->findChildren<QPushButton*>();
+            for (QPushButton* b : btns) {
+                if (b->text() == QStringLiteral("下一步")) {
+                    b->click();
+                    QApplication::processEvents();
+                    const QPixmap p2 = dlg->grab();
+                    if (!p2.isNull() && !shotDir.isEmpty())
+                        p2.save(shotDir + QStringLiteral("/edit-step2-light.png"));
+                    break;
+                }
+            }
+        }
         dlg->close();
         dlg->deleteLater();
         dlg = nullptr;

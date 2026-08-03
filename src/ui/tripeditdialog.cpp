@@ -3,12 +3,13 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateTimeEdit>
-#include <QDialogButtonBox>
 #include <QDoubleValidator>
 #include <QFormLayout>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 #include "ui/appdatetimeedit.h"
@@ -65,16 +66,27 @@ TripEditDialog::TripEditDialog(const QList<TransportMode>& modes, const QList<Tr
 
 void TripEditDialog::buildUI()
 {
+    setMinimumWidth(420);
+
     auto* root = new QVBoxLayout(this);
     root->setContentsMargins(20, 16, 20, 16);
-    root->setSpacing(10);
+    root->setSpacing(0);
+
+    m_stack = new QStackedWidget(this);
+    root->addWidget(m_stack);
+
+    // ================= 第 1 页：主要字段 =================
+    auto* page1 = new QWidget(m_stack);
+    auto* v1 = new QVBoxLayout(page1);
+    v1->setContentsMargins(0, 0, 0, 0);
+    v1->setSpacing(10);
 
     auto* form = new QFormLayout;
     form->setSpacing(10);
     form->setLabelAlignment(Qt::AlignRight);
 
     // 交通方式（纯文本，不带图标）
-    m_modeCombo = new QComboBox(this);
+    m_modeCombo = new QComboBox(page1);
     for (const TransportMode& m : m_modes)
         m_modeCombo->addItem(m.name, m.code);
     if (m_modeCombo->count() == 0)
@@ -82,74 +94,102 @@ void TripEditDialog::buildUI()
     form->addRow(QStringLiteral("交通方式"), m_modeCombo);
 
     // 起终点
-    m_startPlace = new QLineEdit(this);
+    m_startPlace = new QLineEdit(page1);
     m_startPlace->setPlaceholderText(QStringLiteral("如：海淀黄庄"));
-    m_endPlace = new QLineEdit(this);
+    m_endPlace = new QLineEdit(page1);
     m_endPlace->setPlaceholderText(QStringLiteral("如：北京大学东门"));
     form->addRow(QStringLiteral("起点"), m_startPlace);
     form->addRow(QStringLiteral("终点"), m_endPlace);
 
     // 时间（AppDateTimeEdit 自带与 QComboBox 同款下拉箭头）
-    m_startTime = new AppDateTimeEdit(QDateTime::currentDateTime(), this);
+    m_startTime = new AppDateTimeEdit(QDateTime::currentDateTime(), page1);
     m_startTime->setCalendarPopup(true);
     m_startTime->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
-    m_endTime = new AppDateTimeEdit(QDateTime::currentDateTime(), this);
+    m_endTime = new AppDateTimeEdit(QDateTime::currentDateTime(), page1);
     m_endTime->setCalendarPopup(true);
     m_endTime->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
-    m_inProgress = new QCheckBox(QStringLiteral("进行中（未到达）"), this);
+    m_inProgress = new QCheckBox(QStringLiteral("进行中（未到达）"), page1);
     form->addRow(QStringLiteral("开始时间"), m_startTime);
     form->addRow(QStringLiteral("结束时间"), m_endTime);
     form->addRow(QString(), m_inProgress);
 
     // 里程 / 费用（单位：km、元，保存时换算成 m、分）
-    m_distance = new QLineEdit(this);
+    m_distance = new QLineEdit(page1);
     m_distance->setPlaceholderText(QStringLiteral("可留空"));
-    m_distance->setValidator(kmValidator(this));
-    m_cost = new QLineEdit(this);
+    m_distance->setValidator(kmValidator(page1));
+    m_cost = new QLineEdit(page1);
     m_cost->setPlaceholderText(QStringLiteral("可留空"));
-    m_cost->setValidator(kmValidator(this));
+    m_cost->setValidator(kmValidator(page1));
     form->addRow(QStringLiteral("里程 (km)"), m_distance);
     form->addRow(QStringLiteral("费用 (元)"), m_cost);
 
     // 标签
-    m_tagCombo = new QComboBox(this);
+    m_tagCombo = new QComboBox(page1);
     m_tagCombo->addItem(QStringLiteral("无标签"), QString());
     for (const TripTag& t : m_tags)
         m_tagCombo->addItem(t.name, t.code);
     form->addRow(QStringLiteral("标签"), m_tagCombo);
 
-    // 车次 / 车型（均可空）
-    m_vehicleNo = new QLineEdit(this);
-    m_vehicleNo->setPlaceholderText(QStringLiteral("如：302路 / K262次 / CA1234"));
-    m_vehicleModel = new QLineEdit(this);
-    m_vehicleModel->setPlaceholderText(QStringLiteral("如：CR400AF / DF4D"));
-    form->addRow(QStringLiteral("车次"), m_vehicleNo);
-    form->addRow(QStringLiteral("车型"), m_vehicleModel);
-
     // 备注
-    m_note = new QLineEdit(this);
+    m_note = new QLineEdit(page1);
     m_note->setPlaceholderText(QStringLiteral("可选"));
     form->addRow(QStringLiteral("备注"), m_note);
 
-    root->addLayout(form);
+    v1->addLayout(form);
 
-    m_errorLabel = new QLabel(this);
+    m_errorLabel = new QLabel(page1);
     m_errorLabel->setObjectName(QStringLiteral("hintLabel"));
     m_errorLabel->setStyleSheet(QStringLiteral("color: #E24B4A;"));
     m_errorLabel->setWordWrap(true);
     m_errorLabel->hide();
-    root->addWidget(m_errorLabel);
+    v1->addWidget(m_errorLabel);
 
-    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, this);
-    auto* saveBtn = buttons->button(QDialogButtonBox::Save);
-    saveBtn->setText(QStringLiteral("保存"));
+    // 第 1 页按钮：下一步 / 取消
+    auto* btn1 = new QHBoxLayout;
+    btn1->addStretch();
+    auto* cancelBtn1 = new QPushButton(QStringLiteral("取消"), page1);
+    auto* nextBtn = new QPushButton(QStringLiteral("下一步"), page1);
+    nextBtn->setObjectName(QStringLiteral("primaryButton"));
+    btn1->addWidget(cancelBtn1);
+    btn1->addWidget(nextBtn);
+    v1->addLayout(btn1);
+    connect(nextBtn, &QPushButton::clicked, this, &TripEditDialog::goNext);
+    connect(cancelBtn1, &QPushButton::clicked, this, &QDialog::reject);
+
+    m_stack->addWidget(page1);
+
+    // ================= 第 2 页：车次 / 车型 =================
+    auto* page2 = new QWidget(m_stack);
+    auto* v2 = new QVBoxLayout(page2);
+    v2->setContentsMargins(0, 0, 0, 0);
+    v2->setSpacing(10);
+
+    auto* form2 = new QFormLayout;
+    form2->setSpacing(10);
+    form2->setLabelAlignment(Qt::AlignRight);
+    m_vehicleNo = new QLineEdit(page2);
+    m_vehicleModel = new QLineEdit(page2);
+    form2->addRow(QStringLiteral("车次"), m_vehicleNo);
+    form2->addRow(QStringLiteral("车型"), m_vehicleModel);
+    v2->addLayout(form2);
+    v2->addStretch();
+
+    // 第 2 页按钮：上一步 / 保存
+    auto* btn2 = new QHBoxLayout;
+    btn2->addStretch();
+    auto* backBtn = new QPushButton(QStringLiteral("上一步"), page2);
+    auto* saveBtn = new QPushButton(QStringLiteral("保存"), page2);
     saveBtn->setObjectName(QStringLiteral("primaryButton"));
-    auto* cancelBtn = buttons->button(QDialogButtonBox::Cancel);
-    cancelBtn->setText(QStringLiteral("取消"));
-    root->addWidget(buttons);
+    btn2->addWidget(backBtn);
+    btn2->addWidget(saveBtn);
+    v2->addLayout(btn2);
+    connect(backBtn, &QPushButton::clicked, this, &TripEditDialog::goBack);
+    connect(saveBtn, &QPushButton::clicked, this, &TripEditDialog::onSave);
 
-    connect(buttons, &QDialogButtonBox::accepted, this, &TripEditDialog::onSave);
-    connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    m_stack->addWidget(page2);
+
+    m_stack->setCurrentIndex(0);
+
     connect(m_inProgress, &QCheckBox::toggled, this, &TripEditDialog::onToggleInProgress);
 }
 
@@ -162,19 +202,7 @@ void TripEditDialog::onToggleInProgress(bool checked)
 
 bool TripEditDialog::validate(QString& error) const
 {
-    const bool hasPlace = !m_startPlace->text().trimmed().isEmpty()
-                       || !m_endPlace->text().trimmed().isEmpty();
-    const bool hasOther = !m_distance->text().trimmed().isEmpty()
-                       || !m_cost->text().trimmed().isEmpty()
-                       || !m_vehicleNo->text().trimmed().isEmpty()
-                       || !m_vehicleModel->text().trimmed().isEmpty()
-                       || !m_note->text().trimmed().isEmpty()
-                       || !m_tagCombo->currentData().toString().isEmpty();
-    if (!hasPlace && !hasOther) {
-        error = QStringLiteral("请至少填写起点/终点、或里程、费用、标签、备注中的一项");
-        return false;
-    }
-
+    // 第 1 页只校验时间合法性；内容可留空（只填时间也允许保存）
     if (!m_inProgress->isChecked() && m_endTime->dateTime() < m_startTime->dateTime()) {
         error = QStringLiteral("结束时间不能早于开始时间");
         return false;
@@ -182,7 +210,7 @@ bool TripEditDialog::validate(QString& error) const
     return true;
 }
 
-void TripEditDialog::onSave()
+void TripEditDialog::goNext()
 {
     QString error;
     if (!validate(error)) {
@@ -190,7 +218,18 @@ void TripEditDialog::onSave()
         m_errorLabel->show();
         return;
     }
+    m_errorLabel->hide();
+    m_stack->setCurrentIndex(1);
+}
 
+void TripEditDialog::goBack()
+{
+    m_stack->setCurrentIndex(0);
+}
+
+void TripEditDialog::onSave()
+{
+    // 时间已在第 1 页校验；车次/车型可空，直接构建保存
     m_result.id = m_existing.id;
     m_result.userId = m_existing.userId;
     m_result.modeCode = m_modeCombo->currentData().toString();

@@ -9,6 +9,7 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
+class QStackedWidget;
 class AppDateTimeEdit;
 
 // 新增 / 编辑行程对话框。只负责收集输入并做基本校验，写库由外部 Repository 完成。
@@ -23,15 +24,19 @@ public:
 private slots:
     void onSave();
     void onToggleInProgress(bool checked);
+    void goNext();    // 第 1 页 -> 第 2 页（车次/车型）
+    void goBack();
 
 private:
     void buildUI();
-    bool validate(QString& error) const;
+    bool validate(QString& error) const;   // 第 1 页校验（仅时间合法性）
 
     QList<TransportMode> m_modes;
     QList<TripTag> m_tags;
     Trip m_existing;
     Trip m_result;
+
+    QStackedWidget* m_stack = nullptr;
 
     QComboBox* m_modeCombo = nullptr;
     QLineEdit* m_startPlace = nullptr;

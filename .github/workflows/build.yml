@@ -1,7 +1,10 @@
 name: build
 
 # 自检：每次 push / PR 自动编译，并跑数据层与 GUI 冒烟测试。
-# 编译在 Windows(MSVC) 与 Ubuntu 双平台；测试在 Ubuntu（offscreen 渲染）执行。
+# 与本地工具链对齐：Qt 6.11.0（Windows 为 MinGW 64 位，见 D:/Qt/qt/6.11.0/mingw_64）。
+#   - Ubuntu:  GCC 编译 + 测试（≈ MinGW 行为）
+#   - Windows: MinGW 编译（镜像本地 Qt Creator 工具链）
+#   - MSVC:    额外交叉检查（验证 /utf-8 等 MSVC 特有行为）
 
 on:
   push:
@@ -16,7 +19,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.2'
+          version: '6.11.0'
           arch: 'linux_gcc_64'
           cache: true
       - name: Configure
@@ -28,14 +31,38 @@ jobs:
       - name: GUI smoke test
         run: QT_QPA_PLATFORM=offscreen ./build/TransitLogGuiSmoke
 
-  build-windows:
+  build-windows-mingw:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup MinGW toolchain
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
+      - name: Install Qt (MinGW 6.11.0)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.11.0'
+          arch: 'win64_mingw'
+          cache: true
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build
+
+  build-windows-msvc:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Qt
+      - name: Install Qt (MSVC 6.11.0)
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.2'
+          version: '6.11.0'
           arch: 'win64_msvc2022_64'
           cache: true
       - name: Configure

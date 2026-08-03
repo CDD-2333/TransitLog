@@ -15,6 +15,7 @@ public:
     explicit AppDateTimeEdit(const QDateTime& datetime, QWidget* parent = nullptr);
 
 protected:
+    void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
 
 private:

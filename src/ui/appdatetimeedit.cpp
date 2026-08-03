@@ -3,12 +3,19 @@
 #include <QCalendarWidget>
 #include <QGuiApplication>
 #include <QMouseEvent>
+#include <QPaintEvent>
+#include <QPainter>
 #include <QScreen>
+
+#include "app/thememanager.h"
 
 AppDateTimeEdit::AppDateTimeEdit(QWidget* parent)
     : QDateTimeEdit(parent)
 {
+    // NoButtons：从源头移除 up/down 按钮与内部按钮框，字段呈纯输入框样式，
+    // 与 QLineEdit 外观一致；日历由手动 popup 提供。
     setCalendarPopup(true);
+    setButtonSymbols(QAbstractSpinBox::NoButtons);
     connectCalendar();
 }
 
@@ -16,7 +23,22 @@ AppDateTimeEdit::AppDateTimeEdit(const QDateTime& datetime, QWidget* parent)
     : QDateTimeEdit(datetime, parent)
 {
     setCalendarPopup(true);
+    setButtonSymbols(QAbstractSpinBox::NoButtons);
     connectCalendar();
+}
+
+void AppDateTimeEdit::paintEvent(QPaintEvent* event)
+{
+    // QDateTimeEdit 即使 NoButtons，QAbstractSpinBox 仍会在右缘画一条原生 sunken frame
+    // 内线（视觉上与 QLineEdit 不一致）。这里只把右缘内线用主题底色盖掉，
+    // 其余边框/聚焦边框交给 base + QSS 统一规则（与 QLineEdit 完全一致）。
+    QDateTimeEdit::paintEvent(event);
+
+    const auto pal = ThemeManager::instance().palette(ThemeManager::instance().currentTheme());
+    QPainter p(this);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(pal.surfaceAlt));
+    p.drawRect(QRect(width() - 5, 1, 3, height() - 2));
 }
 
 void AppDateTimeEdit::connectCalendar()

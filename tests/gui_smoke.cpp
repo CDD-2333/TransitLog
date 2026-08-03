@@ -8,6 +8,7 @@
 #include <QDir>
 #include <QEvent>
 #include <QFontDatabase>
+#include <QLineEdit>
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QStandardPaths>
@@ -152,6 +153,37 @@ int main(int argc, char* argv[])
         ++failures;
     }
 
+    // 聚焦边框一致性：QLineEdit(起点/终点) 与 AppDateTimeEdit(开始/结束时间) 聚焦后
+    // 顶边都应为同一 primary 色（共享 :focus 规则，不因控件类型而异）
+    auto focusedPrimaryPixels = [&](QWidget* w) {
+        w->setFocus(Qt::OtherFocusReason);
+        w->resize(200, 40);
+        w->show();
+        QApplication::processEvents();
+        const QImage img = w->grab().toImage();
+        w->hide();
+        int cnt = 0;
+        for (int y = 0; y < 3; ++y)
+            for (int x = 4; x < img.width() - 4; ++x) {
+                const QColor c = img.pixelColor(x, y);
+                if (std::abs(c.red() - 0x4A) <= 30 && std::abs(c.green() - 0x7C) <= 30
+                    && std::abs(c.blue() - 0x6F) <= 30)
+                    ++cnt;
+            }
+        return cnt;
+    };
+    ThemeManager::instance().setTheme(Theme::Light);
+    app.setStyleSheet(ThemeManager::instance().buildQSS(Theme::Light));
+    QLineEdit le;
+    AppDateTimeEdit de(QDateTime::currentDateTime());
+    const int leFocus = focusedPrimaryPixels(&le);
+    const int deFocus = focusedPrimaryPixels(&de);
+    qInfo() << "focus primary-border pixels: QLineEdit=" << leFocus << "AppDateTimeEdit=" << deFocus;
+    if (leFocus < 20 || deFocus < 20) {
+        qCritical() << "输入框聚焦边框不一致";
+        ++failures;
+    }
+
     ThemeManager::instance().setTheme(Theme::Light);
     app.setStyleSheet(ThemeManager::instance().buildQSS(Theme::Light));
 
@@ -203,7 +235,17 @@ int main(int argc, char* argv[])
     });
     QTimer::singleShot(740, [&]() {
         saveShot(QStringLiteral("trip-dark.png"), &w);
-        // 时间选择器单独渲染（浅/深），供人工核对箭头与按钮区是否干净
+        // 深色主题下再打开编辑对话框（含 起点/终点/开始时间/结束时间 四个输入框）
+        dlg = new TripEditDialog(repo.transportModes(), repo.tripTags(), Trip());
+        dlg->resize(460, 560);
+        dlg->show();
+    });
+    QTimer::singleShot(920, [&]() {
+        saveShot(QStringLiteral("edit-dark.png"), dlg);
+        dlg->close();
+        dlg->deleteLater();
+        dlg = nullptr;
+        // 时间选择器单独渲染（浅/深）
         if (!shotDir.isEmpty()) {
             ThemeManager::instance().setTheme(Theme::Light);
             app.setStyleSheet(ThemeManager::instance().buildQSS(Theme::Light));
